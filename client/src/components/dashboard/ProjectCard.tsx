@@ -185,8 +185,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </div>
             <Progress 
               value={project.progress} 
-              className="h-1.5 bg-muted" 
-              indicatorClassName={getProgressColor(project.progress)}
+              className="h-1.5" 
+              indicatorColor={getProgressColor(project.progress)}
             />
           </div>
         )}
