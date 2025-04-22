@@ -960,52 +960,58 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                           {/* Tampilkan lampiran jika ada */}
                           {attachments.length > 0 && (
                             <div className="mt-3 pt-2 border-t border-border">
-                              <p className="text-xs font-medium mb-2">Attachments:</p>
-                              <div className="grid grid-cols-2 gap-2">
-                                {attachments.map((attachment, i) => (
-                                  <a 
-                                    key={i}
-                                    href={attachment.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="flex items-center p-2 rounded border border-border hover:bg-muted/50 transition-colors"
-                                  >
-                                    {attachment.name && attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
-                                      <img 
-                                        src={attachment.url} 
-                                        alt={attachment.name ? decodeURIComponent(attachment.name) : 'Image attachment'} 
-                                        className="h-8 w-8 object-cover rounded mr-2 flex-shrink-0" 
-                                        onError={(e) => {
-                                          console.log("Image load error for:", attachment.url);
-                                          e.currentTarget.src = ''; 
-                                          e.currentTarget.style.display = 'none';
-                                          // Mencari elemen FileIcon dengan getElementById
-                                          const fileIconElement = document.getElementById(`attachment-icon-${i}`);
-                                          if (fileIconElement) {
-                                            fileIconElement.style.display = 'block';
-                                          }
-                                        }}
-                                      />
-                                    ) : null}
-                                    <FileIcon 
-                                      id={`attachment-icon-${i}`} 
-                                      className="h-4 w-4 mr-2 flex-shrink-0" 
-                                      style={{display: (attachment.name && attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/)) ? 'none' : 'block'}} 
-                                    />
-                                    <span className="text-xs truncate">
-                                      {attachment.name ? 
-                                        (() => {
-                                          try {
-                                            return decodeURIComponent(attachment.name)
-                                          } catch (e) {
-                                            console.error("Error decoding filename:", e);
-                                            return attachment.name
-                                          }
-                                        })() 
-                                        : 'Attachment'}
-                                    </span>
-                                  </a>
-                                ))}
+                              <p className="text-xs font-medium mb-2">Attachments ({attachments.length}):</p>
+                              <div className="flex flex-col space-y-3">
+                                {attachments.map((attachment, i) => {
+                                  const isImage = attachment.url && 
+                                    (attachment.type?.includes('image/') || 
+                                     (attachment.name && attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/)));
+                                  
+                                  // URL yang benar-benar akan digunakan
+                                  const attachmentUrl = attachment.url || '#';
+                                  const displayName = (() => {
+                                    if (!attachment.name) return 'Attachment';
+                                    try { return decodeURIComponent(attachment.name); }
+                                    catch { return attachment.name; }
+                                  })();
+                                  
+                                  return (
+                                    <div key={i} className="border rounded-md overflow-hidden">
+                                      {isImage && (
+                                        <div className="w-full aspect-video bg-muted relative flex items-center justify-center">
+                                          <img 
+                                            src={attachmentUrl}
+                                            alt={displayName}
+                                            className="max-h-full max-w-full object-contain"
+                                            style={{maxHeight: "200px"}}
+                                            onError={() => {
+                                              console.error("Failed to load image:", attachmentUrl);
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="p-2 flex justify-between items-center bg-muted/30">
+                                        <div className="flex items-center">
+                                          <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                                          <span className="text-sm truncate">{displayName}</span>
+                                        </div>
+                                        <a 
+                                          href={attachmentUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="ml-2 p-1 rounded-full hover:bg-muted"
+                                          title="Open in new tab"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                          </svg>
+                                        </a>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
