@@ -4,10 +4,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupFileUpload } from "./upload";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { 
   insertProjectSchema, updateProjectSchema, 
   insertFeedbackSchema, insertMilestoneSchema, 
-  updateMilestoneSchema 
+  updateMilestoneSchema,
+  projects, activities, insertActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -317,6 +320,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint khusus untuk menerima proyek oleh client
+  app.post("/api/projects/:id/accept", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const projectId = parseInt(req.params.id);
+    if (isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+    
+    // Validasi proyek ada dan milik pengguna
+    const project = await storage.getProject(projectId);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Validasi proyek dalam status yang tepat
+    if (project.status !== "under_review") {
+      return res.status(400).json({ message: "Project is not in reviewable state" });
+    }
+    
+    try {
+      // Extract message jika ada
+      const { message } = req.body;
+      
+      // Submit feedback jika ada pesan
+      if (message) {
+        await storage.createFeedback({
+          projectId,
+          content: message
+        });
+      }
+      
+      // Update status proyek ke approved
+      const updatedProject = await db
+        .update(projects)
+        .set({
+          status: "approved",
+          progress: 90
+        })
+        .where(eq(projects.id, projectId))
+        .returning();
+      
+      // Buat activity log untuk mencatat perubahan status
+      await db.insert(activities).values({
+        projectId,
+        type: "status_change",
+        content: "Project has been accepted by client. Awaiting final payment."
+      });
+      
+      return res.status(200).json({ 
+        success: true,
+        project: updatedProject[0]
+      });
+    } catch (error) {
+      console.error("Error accepting project:", error);
+      return res.status(500).json({ 
+        message: "Failed to accept project: " + (error instanceof Error ? error.message : "Unknown error")
+      });
+    }
+  });
+  
+  // Endpoint untuk meminta perubahan pada proyek
+  app.post("/api/projects/:id/request-changes", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const projectId = parseInt(req.params.id);
+    if (isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+    
+    // Validasi proyek ada dan milik pengguna
+    const project = await storage.getProject(projectId);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Validasi proyek dalam status yang tepat
+    if (project.status !== "under_review") {
+      return res.status(400).json({ message: "Project is not in reviewable state" });
+    }
+    
+    try {
+      // Extract message (harus ada)
+      const { message } = req.body;
+      
+      if (!message || !message.trim()) {
+        return res.status(400).json({ message: "Feedback message is required" });
+      }
+      
+      // Submit feedback
+      await storage.createFeedback({
+        projectId,
+        content: message
+      });
+      
+      // Hitung progress baru
+      const newProgress = Math.max(30, project.progress - 10);
+      
+      // Update status proyek ke in_progress
+      const updatedProject = await db
+        .update(projects)
+        .set({
+          status: "in_progress",
+          progress: newProgress
+        })
+        .where(eq(projects.id, projectId))
+        .returning();
+      
+      // Buat activity log untuk mencatat perubahan status
+      await db.insert(activities).values({
+        projectId,
+        type: "status_change",
+        content: "Client requested changes to the project. Returning to development."
+      });
+      
+      return res.status(200).json({ 
+        success: true,
+        project: updatedProject[0]
+      });
+    } catch (error) {
+      console.error("Error requesting changes:", error);
+      return res.status(500).json({ 
+        message: "Failed to request changes: " + (error instanceof Error ? error.message : "Unknown error")
+      });
+    }
+  });
+  
   // Activities Routes
   app.get("/api/activities", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

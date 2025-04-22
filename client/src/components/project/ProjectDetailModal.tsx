@@ -175,30 +175,31 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
   };
 
-  // Function to handle project acceptance
+  // Function to handle project acceptance using dedicated endpoint
   const handleAcceptProject = async () => {
     try {
-      // Prepare a comment message
-      const comment = feedbackContent.trim() 
+      // Get message if user provided any
+      const message = feedbackContent.trim() 
         ? feedbackContent
         : "Project accepted. Thank you for your excellent work!";
         
-      // First, submit feedback
-      await submitFeedbackMutation.mutateAsync(comment);
-      
-      // Then update the project status with improved error handling
-      const response = await apiRequest("PATCH", `/api/projects/${projectId}`, {
-        status: "approved",
-        progress: 90
+      // Use new dedicated endpoint for accepting project
+      const response = await apiRequest("POST", `/api/projects/${projectId}/accept`, {
+        message: message
       });
       
+      // Check if request was successful
       if (!response.ok) {
-        throw new Error(`Failed to update project status: ${response.status} ${response.statusText}`);
+        const responseData = await response.json().catch(() => ({}));
+        const errorMessage = responseData.message || `Failed with status: ${response.status}`;
+        throw new Error(errorMessage);
       }
       
-      // Refresh data
+      // Refresh all relevant data
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/activities`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/feedback`] });
       queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       
       // Show success message
@@ -212,14 +213,14 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     } catch (error) {
       console.error("Error accepting project:", error);
       toast({
-        title: "Error",
+        title: "Error accepting project",
         description: error instanceof Error ? error.message : "An error occurred while accepting the project",
         variant: "destructive"
       });
     }
   };
 
-  // Function to handle project change requests
+  // Function to handle project change requests using dedicated endpoint
   const handleRequestChanges = async () => {
     // Validate feedback content
     if (!feedbackContent.trim()) {
@@ -232,22 +233,23 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
     
     try {
-      // First, submit feedback
-      await submitFeedbackMutation.mutateAsync(feedbackContent);
-      
-      // Then update the project status with improved error handling
-      const response = await apiRequest("PATCH", `/api/projects/${projectId}`, {
-        status: "in_progress",
-        progress: Math.max(30, project ? project.progress - 10 : 30)
+      // Use new dedicated endpoint for requesting changes
+      const response = await apiRequest("POST", `/api/projects/${projectId}/request-changes`, {
+        message: feedbackContent.trim()
       });
       
+      // Check if request was successful
       if (!response.ok) {
-        throw new Error(`Failed to update project status: ${response.status} ${response.statusText}`);
+        const responseData = await response.json().catch(() => ({}));
+        const errorMessage = responseData.message || `Failed with status: ${response.status}`;
+        throw new Error(errorMessage);
       }
       
-      // Refresh data
+      // Refresh all relevant data
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/activities`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/feedback`] });
       queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       
       // Show success message
@@ -261,7 +263,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     } catch (error) {
       console.error("Error requesting changes:", error);
       toast({
-        title: "Error",
+        title: "Error requesting changes",
         description: error instanceof Error ? error.message : "An error occurred while requesting changes",
         variant: "destructive"
       });
