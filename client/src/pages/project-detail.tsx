@@ -142,6 +142,7 @@ export default function ProjectDetail() {
                               <FileText className="h-4 w-4 mr-2" />
                               Testing & Deployment
                             </TabsTrigger>
+                            {/* Only show Review tab when under review for client to approve/reject */}
                             {project.status === "under_review" && (
                               <TabsTrigger value="review" className="flex items-center">
                                 <ClipboardCheck className="h-4 w-4 mr-2" />

@@ -204,11 +204,35 @@ export default function AdminProjectDetail() {
                 <SelectValue placeholder="Change Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending_review">Pending Review</SelectItem>
-                <SelectItem value="awaiting_dp">Awaiting Down Payment</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                {/* Admin hanya dapat mengubah status dalam flow process tertentu */}
+                {project.status === "pending_review" && (
+                  <>
+                    <SelectItem value="pending_review">Pending Review</SelectItem>
+                    <SelectItem value="awaiting_dp">Approve & Request Down Payment</SelectItem>
+                    <SelectItem value="rejected">Reject Project</SelectItem>
+                  </>
+                )}
+                {project.status === "awaiting_dp" && (
+                  <>
+                    <SelectItem value="awaiting_dp">Awaiting Down Payment</SelectItem>
+                    <SelectItem value="in_progress">Payment Received & Start Work</SelectItem>
+                  </>
+                )}
+                {project.status === "in_progress" && (
+                  <>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="under_review">Submit for Client Review</SelectItem>
+                  </>
+                )}
+                {project.status === "under_review" && (
+                  <SelectItem value="under_review">Under Review</SelectItem>
+                )}
+                {project.status === "completed" && (
+                  <SelectItem value="completed">Completed</SelectItem>
+                )}
+                {project.status === "rejected" && (
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                )}
               </SelectContent>
             </Select>
             

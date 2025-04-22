@@ -261,7 +261,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create feedback record with the detailed review
       const reviewFeedback = await storage.createFeedback({
         projectId,
-        clientId: req.user.id,
         content: feedback || `Project ${action === "approve" ? "approved" : action === "request_changes" ? "needs changes" : "rejected"}`
       });
       
