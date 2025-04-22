@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send } from "lucide-react";
+import { Send, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
