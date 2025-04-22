@@ -16,6 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatStatusLabel, statusColorMap } from "@/lib/utils";
 import { 
@@ -72,7 +73,12 @@ export default function AdminProjectDetail() {
   
   // Mutation for updating project status
   const updateProjectMutation = useMutation({
-    mutationFn: async (data: { status: string, adminFeedback?: string }) => {
+    mutationFn: async (data: { 
+      status: string, 
+      adminFeedback?: string,
+      quote?: number,
+      timeline?: number
+    }) => {
       const response = await apiRequest(
         "PATCH", 
         `/api/admin/projects/${id}`, 
