@@ -421,11 +421,11 @@ export default function AdminProjectDetail() {
           <CardContent>
             <p className="whitespace-pre-wrap">{project.description}</p>
             
-            {project.attachments && typeof project.attachments === 'object' && (
+            {project.attachments && typeof project.attachments === 'object' && project.attachments !== null && (
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Array.isArray(project.attachments) && project.attachments.length > 0 && project.attachments.map((attachment: any, index: number) => {
+                  {Array.isArray(project.attachments) && project.attachments.length > 0 && (project.attachments as any[]).map((attachment: any, index: number) => {
                     // Handle different attachment formats (string or object)
                     const attachmentName = typeof attachment === 'string' 
                       ? attachment 
@@ -896,34 +896,10 @@ export default function AdminProjectDetail() {
                             )}
                           </div>
                           
-                          {/* Tampilkan lampiran jika ada */}
-                          {item && 'attachments' in item && item.attachments && Array.isArray(item.attachments) && item.attachments.length > 0 && (
-                            <div className="mt-3">
-                              <h4 className="text-xs font-medium text-muted-foreground mb-2">Lampiran:</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {(item.attachments as any[]).map((attachment: any, index: number) => {
-                                  const fileName = typeof attachment === 'string' 
-                                    ? attachment 
-                                    : (attachment && typeof attachment === 'object' && 'name' in attachment) 
-                                      ? String(attachment.name)
-                                      : `file-${index}`;
-                                  
-                                  return (
-                                    <a 
-                                      key={index}
-                                      href={`/api/files/${fileName}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
-                                    >
-                                      <File className="h-4 w-4 mr-2" />
-                                      <span className="text-xs font-medium">{fileName}</span>
-                                    </a>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
+                          {/* 
+                            Lampiran dinonaktifkan karena tidak didukung di skema database saat ini
+                            Perlu migrasi database untuk menambahkan kolom attachments di tabel feedback
+                          */}
                           
                           <Separator className="my-2" />
                         </div>

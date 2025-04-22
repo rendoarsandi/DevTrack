@@ -43,7 +43,6 @@ export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull().references(() => projects.id),
   content: text("content").notNull(),
-  attachments: jsonb("attachments"), // untuk menyimpan referensi file
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -97,13 +96,6 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
 export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   projectId: true,
   content: true,
-}).extend({
-  attachments: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    url: z.string().optional(),
-    size: z.number().optional(),
-  })).optional(),
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
