@@ -395,17 +395,22 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   </div>
                   
                   <div className="mt-4">
-                    {project.paymentStatus === 0 && (
+                    {project.paymentStatus === 0 && project.status === "awaiting_dp" && (
                       <Button
                         onClick={handlePayDeposit}
                         disabled={updatePaymentStatusMutation.isPending}
-                        className="w-full"
+                        className="w-full bg-secondary hover:bg-secondary/90"
                       >
                         {updatePaymentStatusMutation.isPending ? (
                           <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
-                        Pay Deposit (50%)
+                        Pay Deposit Now (${(project.quote * 0.5).toLocaleString()})
                       </Button>
+                    )}
+                    {project.paymentStatus === 0 && project.status !== "awaiting_dp" && (
+                      <div className="text-sm text-muted-foreground text-center">
+                        Payment will be available once project is approved
+                      </div>
                     )}
                     {project.paymentStatus === 50 && project.status === "completed" && (
                       <Button
@@ -479,12 +484,26 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         </Tabs>
 
         <div className="bg-muted px-4 py-3 sm:flex sm:flex-row-reverse mt-4 -mx-6 -mb-6 border-t border-border">
-          <Button
-            className="sm:ml-3"
-            onClick={() => window.open("mailto:developer@example.com")}
-          >
-            Contact Developer
-          </Button>
+          {project.status === "awaiting_dp" && project.paymentStatus === 0 && (
+            <Button
+              className="sm:ml-3 bg-secondary hover:bg-secondary/90"
+              onClick={handlePayDeposit}
+              disabled={updatePaymentStatusMutation.isPending}
+            >
+              {updatePaymentStatusMutation.isPending ? (
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Pay Deposit
+            </Button>
+          )}
+          {(project.status !== "awaiting_dp" || project.paymentStatus > 0) && (
+            <Button
+              className="sm:ml-3"
+              onClick={() => window.open("mailto:developer@example.com")}
+            >
+              Contact Developer
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={onClose}
