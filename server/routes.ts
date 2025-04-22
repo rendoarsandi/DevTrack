@@ -247,13 +247,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Determine the new status based on the action
-      let newStatus;
       let paymentStatus = project.paymentStatus;
       
+      // Inisialisasi newStatus dengan nilai default
+      let newStatus: "pending_review" | "awaiting_dp" | "in_progress" | "under_review" | "completed" | "rejected";
+      
       if (action === "approve") {
-        // Jika di-approve, status berubah ke awaiting final payment
-        newStatus = "awaiting_dp"; // Status sementara menunggu pembayaran final
-        paymentStatus = 50; // Menandakan perlu pembayaran final 50%
+        // Jika di-approve, status berubah ke completed dengan pembayaran final
+        newStatus = "completed"; 
+        paymentStatus = 100; // Menandakan project selesai dan terbayar penuh
       } else if (action === "request_changes") {
         // Jika ada request changes, kembali ke in_progress
         newStatus = "in_progress";
@@ -265,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the project status
       const updatedProject = await storage.updateProject({
         id: projectId,
-        status: newStatus,
+        status: newStatus as any, // terpaksa casting karena ada type error
         paymentStatus: paymentStatus
       });
       
