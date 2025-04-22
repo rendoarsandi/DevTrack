@@ -656,26 +656,40 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   </Button>
                   <Button 
                     className="bg-secondary hover:bg-secondary/90"
-                    onClick={() => {
+                    onClick={async () => {
                       // Aksi untuk menerima proyek
                       const comment = feedbackContent.trim() 
                         ? feedbackContent
                         : "Proyek diterima. Terima kasih atas kerja yang baik!";
                       
-                      submitFeedbackMutation.mutate(comment);
-                      apiRequest("PATCH", `/api/projects/${projectId}`, {
-                        status: "approved",
-                        progress: 90
-                      }).then(() => {
+                      try {
+                        // Kirim feedback terlebih dahulu
+                        await submitFeedbackMutation.mutateAsync(comment);
+                        
+                        // Kemudian update status project
+                        await apiRequest("PATCH", `/api/projects/${projectId}`, {
+                          status: "approved",
+                          progress: 90
+                        });
+                        
+                        // Refresh data
                         queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
                         queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+                        
                         toast({
                           title: "Proyek diterima!",
                           description: "Proyek telah diterima. Silahkan lakukan pembayaran akhir untuk mendapatkan dokumen/kode proyek."
                         });
                         onClose();
-                      });
-                    }}
+                      } catch (error) {
+                        console.error("Error accepting project:", error);
+                        toast({
+                          title: "Error",
+                          description: error instanceof Error ? error.message : "Terjadi kesalahan saat menerima proyek",
+                          variant: "destructive"
+                        });
+                      }
+                    }
                   >
                     Accept Project
                   </Button>
