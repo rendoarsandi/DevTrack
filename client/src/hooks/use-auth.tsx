@@ -40,8 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Logged in successfully",
-        description: `Welcome back, ${user.fullName}!`,
+        description: `Welcome back, ${user.fullName || user.username}!`,
       });
+      
+      // Redirect based on role
+      if (user.role === "admin") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/";
+      }
     },
     onError: (error: Error) => {
       toast({
