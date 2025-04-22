@@ -10,7 +10,8 @@ import { eq } from "drizzle-orm";
 import { 
   insertProjectSchema, updateProjectSchema, 
   insertFeedbackSchema, insertMilestoneSchema, 
-  updateMilestoneSchema,
+  updateMilestoneSchema, insertNotificationSchema,
+  updateNotificationSchema,
   projects, activities, insertActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
@@ -136,6 +137,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           projectId: id,
           type: "status_change",
           content: `Project status changed from ${project.status} to ${req.body.status}`,
+        });
+        
+        // Create notification for the client
+        await storage.createNotification({
+          userId: project.clientId,
+          type: "status_update",
+          title: "Project Status Changed",
+          message: `Your project "${project.title}" status changed from ${project.status} to ${req.body.status}`,
+          projectId: id,
+          metadata: { 
+            oldStatus: project.status,
+            newStatus: req.body.status
+          }
         });
       }
       
@@ -292,6 +306,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const feedback = await storage.createFeedback(validatedData);
+      
+      // Create notification for admin user(s)
+      // For now, we'll just store one notification that will be seen by any admin
+      const adminNotification = {
+        userId: 1, // Assuming admin user has ID 1, this should be refined later
+        type: "new_feedback" as const,
+        title: "New Feedback",
+        message: `Client ${req.user.username} provided feedback on project "${project.title}"`,
+        projectId,
+        metadata: { feedbackId: feedback.id }
+      };
+      
+      await storage.createNotification(adminNotification);
+      
       return res.status(201).json(feedback);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -544,6 +572,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const activities = await storage.getActivitiesByProject(projectId);
     return res.json(activities);
   });
+  
+  // Notification routes
+  app.get("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const notifications = await storage.getNotificationsByUser(req.user.id);
+      return res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const count = await storage.getUnreadNotificationCount(req.user.id);
+      return res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread notification count:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/notifications/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid notification ID" });
+    
+    try {
+      const validatedData = updateNotificationSchema.parse({
+        ...req.body,
+        id
+      });
+      
+      const notification = await storage.updateNotification(validatedData);
+      if (!notification) return res.status(404).json({ message: "Notification not found" });
+      
+      return res.json(notification);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      await storage.markAllNotificationsAsRead(req.user.id);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Milestone Routes
   app.get("/api/projects/:id/milestones", async (req, res) => {
@@ -774,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcastToProject(projectId, systemMessage);
       
       // Listen for messages
-      ws.on('message', (messageData) => {
+      ws.on('message', async (messageData) => {
         try {
           const parsedData = JSON.parse(messageData.toString());
           if (!parsedData.content) return;
@@ -790,10 +879,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Log to database as feedback
           try {
             // Store in database asynchronously - don't wait for result
-            storage.createFeedback({
+            await storage.createFeedback({
               projectId,
               content: `CHAT: ${user.username} (${user.role}): ${parsedData.content}`
-            }).catch(err => console.error('Error storing chat message:', err));
+            });
+            
+            // Get project to find client and notify them
+            const project = await storage.getProject(projectId);
+            if (project) {
+              // If message is from admin, notify client
+              if (user.role === 'admin') {
+                await storage.createNotification({
+                  userId: project.clientId,
+                  type: 'new_message',
+                  title: 'New Message',
+                  message: `Admin sent: ${parsedData.content.substring(0, 50)}${parsedData.content.length > 50 ? '...' : ''}`,
+                  projectId,
+                  metadata: { messageType: 'chat' }
+                });
+              } 
+              // If message is from client, notify admin users (future implementation)
+              // This would need to get all admin users and notify each one
+            }
           } catch (e) {
             console.error('Error creating feedback record:', e);
           }
