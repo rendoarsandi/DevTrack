@@ -27,8 +27,10 @@ import {
   DollarSign, 
   File, 
   MessageSquare, 
-  User
+  User,
+  ClipboardList
 } from "lucide-react";
+import { ProjectReviewForm } from "@/components/admin/ProjectReviewForm";
 import { Project, Feedback, Milestone } from "@shared/schema";
 
 // Define Activity interface to match updated schema
@@ -467,6 +469,12 @@ export default function AdminProjectDetail() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
             <TabsTrigger value="feedback">Messages</TabsTrigger>
+            {project.status === "under_review" && (
+              <TabsTrigger value="review" className="flex items-center">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Review
+              </TabsTrigger>
+            )}
           </TabsList>
           
           <TabsContent value="activity" className="space-y-4">
@@ -742,6 +750,26 @@ export default function AdminProjectDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Project Review Tab - Only shown for projects under review */}
+          {project.status === "under_review" && (
+            <TabsContent value="review" className="space-y-4">
+              <ProjectReviewForm 
+                project={project} 
+                onComplete={() => {
+                  // Refresh data after review is submitted
+                  queryClient.invalidateQueries({
+                    queryKey: [`/api/admin/projects/${id}`],
+                  });
+                  
+                  toast({
+                    title: "Review submitted",
+                    description: "Your review has been recorded and the project status has been updated."
+                  });
+                }} 
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AdminLayout>
