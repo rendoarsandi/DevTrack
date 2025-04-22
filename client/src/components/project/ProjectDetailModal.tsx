@@ -268,7 +268,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
   const handleSubmitFeedback = () => {
     if (feedbackContent.trim()) {
       // Add attachments info if any
-      let content = feedbackContent;
+      let content = feedbackContent.trim();
       
       if (uploadedFiles.length > 0) {
         // Gunakan format JSON untuk menyimpan informasi attachment
@@ -284,13 +284,15 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         const attachmentsJSON = JSON.stringify(attachmentsData);
         
         // Tambahkan ke pesan dengan tag pembatas
-        content = `${content.trim()}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        content = `${content}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
         
         console.log("Sending message with attachments:", content);
       }
       
       submitFeedbackMutation.mutate(content);
-      // Clear uploaded files after sending
+      
+      // Reset form
+      setFeedbackContent("");
       setUploadedFiles([]);
     } else {
       toast({
@@ -884,17 +886,21 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       // Periksa apakah pesan berisi tautan lampiran (baik format lama atau baru)
                       const hasAttachments = feedback.content.includes('[Attachment:') || feedback.content.includes('---ATTACHMENTS_DATA---');
                       
-                      // Pisahkan konten pesan utama dan lampiran 
+                      // Pisahkan konten pesan utama dan lampiran
                       let mainContent = feedback.content;
                       const attachments: Array<{name: string, url: string, type?: string}> = [];
                       
                       // Penanganan lampiran dengan 2 metode berbeda
                       try {
+                        console.log("Parsing pesan:", feedback.content);
+                        
                         // Metode 1: Cek apakah ada tag JSON dengan format baru
                         const jsonPattern = /---ATTACHMENTS_DATA---\n([\s\S]*?)\n---END_ATTACHMENTS_DATA---/;
                         const jsonDataMatch = feedback.content.match(jsonPattern);
                         
                         if (jsonDataMatch && jsonDataMatch[1]) {
+                          console.log("Menemukan format JSON");
+                          
                           // Parse data JSON lampiran
                           try {
                             const jsonData = JSON.parse(jsonDataMatch[1]);
@@ -903,8 +909,12 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               // Gunakan data lampiran dari JSON
                               attachments.push(...jsonData.attachments);
                               
-                              // Bersihkan pesan utama
-                              mainContent = feedback.content.replace(/\n\n---ATTACHMENTS_DATA---\n[\s\S]*?\n---END_ATTACHMENTS_DATA---/, '');
+                              // Bersihkan pesan utama (hapus bagian attachment saja)
+                              const attachmentRegex = /\n\n---ATTACHMENTS_DATA---\n[\s\S]*?\n---END_ATTACHMENTS_DATA---/;
+                              mainContent = feedback.content.replace(attachmentRegex, '');
+                              
+                              console.log("Hasil ekstraksi pesan:", mainContent);
+                              console.log("Jumlah lampiran:", attachments.length);
                             }
                           } catch (jsonErr) {
                             console.error("Error parsing JSON attachments:", jsonErr);
@@ -912,27 +922,32 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                         } 
                         // Metode 2: Format lama dengan markdown
                         else if (hasAttachments) {
-                          // Pisahkan konten pesan dan lampiran
-                          const parts = feedback.content.split('\n\n');
-                          mainContent = parts[0];
+                          console.log("Menggunakan format lama");
                           
-                          // Ekstrak semua lampiran jika ada
-                          if (parts.length > 1) {
-                            // Dapatkan bagian attachment dari pesan
-                            const attachmentText = parts.slice(1).join('\n\n');
-                            // Gunakan regex untuk mencocokkan semua attachment
-                            const regex = /\[Attachment: ([^\]]+)\]\(([^)]+)\)/g;
-                            
-                            let match;
-                            while ((match = regex.exec(attachmentText)) !== null) {
-                              if (match[1] && match[2]) {
-                                attachments.push({
-                                  name: match[1],
-                                  url: match[2]
-                                });
-                              }
+                          // Ekstrak lampiran dengan format markdown
+                          const regex = /\[Attachment: ([^\]]+)\]\(([^)]+)\)/g;
+                          const text = feedback.content;
+                          
+                          // Cari posisi kemunculan pertama dari attachment
+                          const attachmentPos = text.indexOf('\n\n[Attachment:');
+                          if (attachmentPos !== -1) {
+                            // Ambil hanya bagian sebelum attachment
+                            mainContent = text.substring(0, attachmentPos);
+                          }
+                          
+                          // Ekstrak semua attachment
+                          let match;
+                          while ((match = regex.exec(text)) !== null) {
+                            if (match[1] && match[2]) {
+                              attachments.push({
+                                name: match[1],
+                                url: match[2]
+                              });
                             }
                           }
+                          
+                          console.log("Hasil ekstraksi pesan (format lama):", mainContent);
+                          console.log("Jumlah lampiran (format lama):", attachments.length);
                         }
                       } catch (error) {
                         console.error("Error parsing attachments:", error);
