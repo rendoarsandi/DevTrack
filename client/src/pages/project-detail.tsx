@@ -4,8 +4,10 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { ProjectDetailModal } from "@/components/project/ProjectDetailModal";
 import { ActivityFeed } from "@/components/project/ActivityFeed";
+import { ReviewChecklist } from "@/components/project/ReviewChecklist";
+import { TestingDocumentation } from "@/components/project/TestingDocumentation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText } from "lucide-react";
 import { Project } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectProgress } from "@/components/project/ProjectProgress";
@@ -50,6 +52,9 @@ export default function ProjectDetail() {
     navigate("/");
     return null;
   }
+  
+  // Show review components conditionally based on project status
+  const shouldShowReviewComponents = project.status === "in_progress" || project.status === "under_review";
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -82,6 +87,34 @@ export default function ProjectDetail() {
                     <h2 className="text-lg font-bold mb-4">Project Progress</h2>
                     {project && <ProjectProgress project={project} />}
                   </div>
+                  
+                  {/* Review components - only shown when project is in progress/under review */}
+                  {shouldShowReviewComponents && (
+                    <>
+                      <div className="mt-6">
+                        <Tabs defaultValue="checklist">
+                          <TabsList className="w-full">
+                            <TabsTrigger value="checklist" className="flex items-center">
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Review Checklist
+                            </TabsTrigger>
+                            <TabsTrigger value="testing" className="flex items-center">
+                              <FileText className="h-4 w-4 mr-2" />
+                              Testing & Deployment
+                            </TabsTrigger>
+                          </TabsList>
+                          
+                          <TabsContent value="checklist" className="mt-4">
+                            <ReviewChecklist projectId={projectId} />
+                          </TabsContent>
+                          
+                          <TabsContent value="testing" className="mt-4">
+                            <TestingDocumentation projectId={projectId} />
+                          </TabsContent>
+                        </Tabs>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="lg:col-span-1">
@@ -129,6 +162,28 @@ export default function ProjectDetail() {
                       </div>
                     </TabsContent>
                   </Tabs>
+                  
+                  {/* Submission button (only when in progress) */}
+                  {project.status === "in_progress" && (
+                    <div className="mt-6">
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        variant="default"
+                        onClick={() => {
+                          // This would normally trigger a status change API call
+                          alert("This would submit the project for review. The status would change to 'under_review'.");
+                        }}
+                      >
+                        <Rocket className="mr-2 h-5 w-5" />
+                        Submit Project for Review
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        Before submitting, make sure all checklist items are completed 
+                        and testing documentation is provided.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
