@@ -877,7 +877,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                     className="flex items-center p-2 rounded border border-border hover:bg-muted/50 transition-colors"
                                   >
                                     <FileIcon className="h-3 w-3 mr-2 flex-shrink-0" />
-                                    <span className="text-xs truncate">{attachment.name}</span>
+                                    <span className="text-xs truncate">{decodeURIComponent(attachment.name)}</span>
                                   </a>
                                 ))}
                               </div>
@@ -958,7 +958,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                           <li key={index} className="flex items-center justify-between bg-muted/50 rounded-md p-2">
                             <div className="flex items-center">
                               <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                              <span className="text-sm truncate max-w-[180px]">{file.name}</span>
+                              <span className="text-sm truncate max-w-[180px]">{decodeURIComponent(file.name)}</span>
                             </div>
                             <button
                               onClick={() => handleRemoveFile(file.url)}
