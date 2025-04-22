@@ -132,6 +132,44 @@ export default function ProjectDetail() {
                     onClose={() => navigate("/")}
                   />
                   
+                  {/* Project review notification - more prominent */}
+                  {project.status === "under_review" && (
+                    <div className="my-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <AlertCircle className="h-6 w-6 text-amber-500" />
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-lg font-medium text-amber-800">Review Diperlukan!</h3>
+                          <div className="mt-2 text-amber-700">
+                            <p>Proyek Anda telah memasuki tahap akhir pengembangan dan siap untuk dievaluasi.</p>
+                            <p className="mt-1">Silahkan gunakan <span className="font-bold">form review di bawah</span> ini untuk menyetujui atau meminta perubahan pada proyek Anda.</p>
+                            <div className="mt-4">
+                              <Button 
+                                onClick={() => {
+                                  // Scroll ke form review dan ubah tab secara otomatis
+                                  const reviewElement = document.getElementById('review-section');
+                                  if (reviewElement) {
+                                    reviewElement.scrollIntoView({ behavior: 'smooth' });
+                                    
+                                    // Temukan tab review dan klik
+                                    const reviewTab = document.querySelector('[value="review"]');
+                                    if (reviewTab) {
+                                      (reviewTab as HTMLElement).click();
+                                    }
+                                  }
+                                }}
+                                className="bg-amber-600 hover:bg-amber-700 text-white"
+                              >
+                                Berikan Review Sekarang &rarr;
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Project progress visualization */}
                   <div className="mt-6">
                     <h2 className="text-lg font-bold mb-4">Project Progress</h2>
