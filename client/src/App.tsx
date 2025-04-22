@@ -15,12 +15,18 @@ import AdminDashboard from "@/pages/admin/admin-dashboard";
 import AdminProjectDetail from "@/pages/admin/project-detail";
 import AdminProjectEdit from "@/pages/admin/project-edit";
 
+// Wrapper for components that might return null to satisfy Route's component type requirement
+const SafeProjectDetail = () => {
+  const component = ProjectDetail();
+  return component || <div>Loading...</div>;
+};
+
 function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/projects/new" component={ProjectForm} />
-      <ProtectedRoute path="/projects/:id" component={ProjectDetail} />
+      <ProtectedRoute path="/projects/:id" component={SafeProjectDetail} />
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
       <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
       <ProtectedAdminRoute path="/admin/projects/:id/edit" component={AdminProjectEdit} />

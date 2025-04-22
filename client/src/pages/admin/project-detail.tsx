@@ -300,15 +300,17 @@ export default function AdminProjectDetail() {
           <CardContent>
             <p className="whitespace-pre-wrap">{project.description}</p>
             
-            {project.attachments && Array.isArray(project.attachments) && project.attachments.length > 0 && (
+            {project.attachments && typeof project.attachments === 'object' && (
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
-                  {project.attachments.map((attachment, index) => {
+                  {Array.isArray(project.attachments) && project.attachments.length > 0 && project.attachments.map((attachment: any, index: number) => {
                     // Handle different attachment formats (string or object)
                     const attachmentName = typeof attachment === 'string' 
                       ? attachment 
-                      : attachment.name || 'file';
+                      : (attachment && typeof attachment === 'object' && attachment.name) 
+                        ? attachment.name 
+                        : 'file';
                     
                     return (
                       <a 
