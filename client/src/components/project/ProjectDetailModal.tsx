@@ -16,7 +16,9 @@ import {
   Loader2 as Loader2Icon,
   ClipboardCheck,
   FileIcon,
-  MessageSquare
+  MessageSquare,
+  AlertCircle,
+  CheckCircle
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Project, Activity, Feedback } from "@shared/schema";
