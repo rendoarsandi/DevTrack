@@ -384,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (message) {
         await storage.createFeedback({
           projectId,
-          content: message
+          content: `REVIEW: ${message}`
         });
       }
       
@@ -442,10 +442,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Feedback message is required" });
       }
       
-      // Submit feedback
+      // Submit feedback with a special prefix to mark it as a change request
       await storage.createFeedback({
         projectId,
-        content: message
+        content: `REQUEST CHANGES: ${message}`
       });
       
       // Hitung progress baru
@@ -568,7 +568,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const project = await storage.getProject(projectId);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Allow access to both the client who owns the project AND any admin user
+    if (project.clientId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
     
     // Verify the milestone exists and belongs to the project
     const milestone = await storage.getMilestone(id);
