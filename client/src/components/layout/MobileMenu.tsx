@@ -15,6 +15,7 @@ import {
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { NotificationDropdown } from "@/components/notification/NotificationDropdown";
 
 interface NavItemProps {
   href: string;
