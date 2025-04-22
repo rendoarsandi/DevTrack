@@ -106,11 +106,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
         <div className="flex flex-col flex-grow pt-5 overflow-y-auto border-r bg-card">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-semibold text-lg">PM</span>
+          <div className="flex items-center justify-between flex-shrink-0 px-4">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-semibold text-lg">PM</span>
+              </div>
+              <h1 className="ml-2 text-xl font-semibold">Admin Panel</h1>
             </div>
-            <h1 className="ml-2 text-xl font-semibold">Admin Panel</h1>
+            <NotificationDropdown />
           </div>
           
           <div className="mt-5 flex-grow flex flex-col">
