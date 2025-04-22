@@ -858,7 +858,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 setActiveTab("review");
               }}
             >
-              Berikan Review
+              Submit Review
             </Button>
           )}
           
