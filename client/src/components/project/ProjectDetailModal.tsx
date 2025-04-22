@@ -175,7 +175,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
   };
 
-  // New function to handle project acceptance
+  // Function to handle project acceptance
   const handleAcceptProject = async () => {
     try {
       // Prepare a comment message
@@ -186,15 +186,20 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       // First, submit feedback
       await submitFeedbackMutation.mutateAsync(comment);
       
-      // Then update the project status
-      await apiRequest("PATCH", `/api/projects/${projectId}`, {
+      // Then update the project status with improved error handling
+      const response = await apiRequest("PATCH", `/api/projects/${projectId}`, {
         status: "approved",
         progress: 90
       });
       
+      if (!response.ok) {
+        throw new Error(`Failed to update project status: ${response.status} ${response.statusText}`);
+      }
+      
       // Refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       
       // Show success message
       toast({
@@ -214,7 +219,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
   };
 
-  // New function to handle project change requests
+  // Function to handle project change requests
   const handleRequestChanges = async () => {
     // Validate feedback content
     if (!feedbackContent.trim()) {
@@ -230,15 +235,20 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       // First, submit feedback
       await submitFeedbackMutation.mutateAsync(feedbackContent);
       
-      // Then update the project status
-      await apiRequest("PATCH", `/api/projects/${projectId}`, {
+      // Then update the project status with improved error handling
+      const response = await apiRequest("PATCH", `/api/projects/${projectId}`, {
         status: "in_progress",
         progress: Math.max(30, project ? project.progress - 10 : 30)
       });
       
+      if (!response.ok) {
+        throw new Error(`Failed to update project status: ${response.status} ${response.statusText}`);
+      }
+      
       // Refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       
       // Show success message
       toast({

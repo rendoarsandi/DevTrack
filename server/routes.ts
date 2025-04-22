@@ -162,21 +162,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Validate the project exists and belongs to the user
     const project = await storage.getProject(id);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Only non-admins (clients) are restricted to their own projects
+    if (req.user.role !== "admin" && project.clientId !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
     
     try {
+      // Pastikan untuk melakukan deep copy object
+      const requestData = JSON.parse(JSON.stringify(req.body));
+      
       const validatedData = updateProjectSchema.parse({
-        ...req.body,
+        ...requestData,
         id, // Ensure the ID is set correctly
       });
+      
+      // Khusus untuk status, tambahkan activity log
+      if (validatedData.status !== undefined && validatedData.status !== project.status) {
+        // Buat activity log untuk perubahan status
+        await storage.createActivity({
+          projectId: id,
+          type: "status_change",
+          content: `Project status changed from ${project.status} to ${validatedData.status}`
+        });
+      }
       
       const updatedProject = await storage.updateProject(validatedData);
       return res.json(updatedProject);
     } catch (error) {
+      console.error("Project update error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors });
       }
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ message: "Internal server error: " + (error instanceof Error ? error.message : "Unknown error") });
     }
   });
 
