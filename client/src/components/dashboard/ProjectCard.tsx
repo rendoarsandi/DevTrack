@@ -1,84 +1,104 @@
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Project } from "@shared/schema";
+import { 
+  AlertCircle, 
+  Clock, 
+  CircleDollarSign, 
+  Calendar, 
+  TrendingUp,
+  ArrowRight,
+  Eye,
+  CheckCircle2
+} from "lucide-react";
+import { statusColorMap, formatStatusLabel } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  // Status Badge Component
-  const StatusBadge = ({ status }: { status: string }) => {
-    let bgColor = "";
-    let textColor = "";
-    let label = "";
-
-    switch (status) {
-      case "awaiting_dp":
-        bgColor = "bg-yellow-100";
-        textColor = "text-yellow-800";
-        label = "Awaiting DP";
-        break;
-      case "in_progress":
-        bgColor = "bg-blue-100";
-        textColor = "text-blue-800";
-        label = "In Progress";
-        break;
-      case "under_review":
-        bgColor = "bg-purple-100";
-        textColor = "text-purple-800";
-        label = "Under Review";
-        break;
-      case "completed":
-        bgColor = "bg-green-100";
-        textColor = "text-green-800";
-        label = "Completed";
-        break;
-      default:
-        bgColor = "bg-gray-100";
-        textColor = "text-gray-800";
-        label = status;
-    }
-
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}
-      >
-        {label}
-      </span>
-    );
-  };
-
   // Format relative time
   const timeAgo = formatDistanceToNow(new Date(project.createdAt), {
     addSuffix: true,
   });
 
-  // Calculate payment status label
-  const getPaymentStatusButton = () => {
+  // Get status colors from the utility function
+  const statusColors = statusColorMap[project.status] || { bg: "bg-gray-100", text: "text-gray-800" };
+  const statusLabel = formatStatusLabel(project.status);
+
+  // Progress color based on progress percentage
+  const getProgressColor = (progress: number) => {
+    if (progress < 25) return "bg-red-500";
+    if (progress < 50) return "bg-yellow-500";
+    if (progress < 75) return "bg-blue-500";
+    return "bg-green-500";
+  };
+
+  // Calculate payment status
+  const getPaymentStatusInfo = () => {
     if (project.paymentStatus === 0) {
+      return {
+        label: "Payment Pending",
+        color: "text-yellow-600",
+        actionLabel: "Pay Deposit",
+        actionColor: "text-secondary",
+      };
+    } else if (project.paymentStatus === 50) {
+      return {
+        label: "50% Paid",
+        color: "text-blue-600",
+        actionLabel: project.status === "completed" ? "Complete Payment" : undefined,
+        actionColor: "text-secondary",
+      };
+    } else if (project.paymentStatus === 100) {
+      return {
+        label: "Fully Paid",
+        color: "text-secondary",
+        actionLabel: undefined,
+      };
+    } else {
+      return {
+        label: `${project.paymentStatus}% Paid`,
+        color: "text-muted-foreground",
+        actionLabel: undefined,
+      };
+    }
+  };
+
+  const paymentInfo = getPaymentStatusInfo();
+
+  // Get action button based on project status
+  const getActionButton = () => {
+    if (project.status === "awaiting_dp" && project.paymentStatus === 0) {
       return (
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="text-secondary font-medium"
+          className="text-secondary border-secondary hover:bg-secondary/10"
           asChild
         >
-          <Link href={`/projects/${project.id}`}>Pay Deposit</Link>
+          <Link href={`/projects/${project.id}`}>
+            <CircleDollarSign className="mr-2 h-4 w-4" />
+            Pay Deposit
+          </Link>
         </Button>
       );
     } else if (project.status === "completed" && project.paymentStatus < 100) {
       return (
         <Button
-          variant="ghost" 
+          variant="outline" 
           size="sm"
-          className="text-secondary font-medium"
+          className="text-secondary border-secondary hover:bg-secondary/10"
           asChild
         >
-          <Link href={`/projects/${project.id}`}>Complete Payment</Link>
+          <Link href={`/projects/${project.id}`}>
+            <CircleDollarSign className="mr-2 h-4 w-4" />
+            Complete Payment
+          </Link>
         </Button>
       );
     } else if (project.status === "under_review") {
@@ -90,83 +110,101 @@ export function ProjectCard({ project }: ProjectCardProps) {
           asChild
         >
           <Link href={`/projects/${project.id}`}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />
             Submit Review
           </Link>
-        </Button>
-      );
-    } else if (project.status === "completed") {
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-secondary font-medium"
-          asChild
-        >
-          <Link href={`/projects/${project.id}`}>View Deployment</Link>
         </Button>
       );
     } else {
       return (
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="text-muted-foreground font-medium"
+          className="text-primary border-primary hover:bg-primary/10"
           asChild
         >
-          <Link href={`/projects/${project.id}`}>GitHub</Link>
+          <Link href={`/projects/${project.id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </Link>
         </Button>
       );
     }
   };
 
   return (
-    <Card className="overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-      <div className="p-5 flex-1">
-        <div className="flex items-center justify-between mb-4">
-          <StatusBadge status={project.status} />
-          <span className="text-xs text-muted-foreground">
-            {project.status === "completed" ? "Completed" : "Created"} {timeAgo}
+    <Card className="overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow border-muted">
+      {/* Status indicator strip on top */}
+      <div className={`h-1 w-full ${statusColors.bg}`}></div>
+      
+      <CardContent className="p-5 pt-4 flex-1">
+        <div className="flex items-center justify-between mb-3">
+          <span
+            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text}`}
+          >
+            {statusLabel}
+          </span>
+          <span className="text-xs text-muted-foreground flex items-center">
+            <Clock className="h-3 w-3 mr-1" />
+            {timeAgo}
           </span>
         </div>
         
-        <h3 className="text-lg font-heading font-semibold mb-2">{project.title}</h3>
+        <h3 className="text-lg font-heading font-semibold mb-2 line-clamp-1">{project.title}</h3>
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
           {project.description}
         </p>
         
-        <div className="mb-4">
-          <div className="flex justify-between text-sm mb-1">
-            <span>Quote</span>
-            <span className="font-medium">${project.quote.toLocaleString()}</span>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-start">
+            <CircleDollarSign className="h-4 w-4 mt-0.5 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-xs text-muted-foreground">Budget</p>
+              <p className="text-sm font-medium">${project.quote.toLocaleString()}</p>
+            </div>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Timeline</span>
-            <span className="font-medium">{project.timeline} weeks</span>
+          
+          <div className="flex items-start">
+            <Calendar className="h-4 w-4 mt-0.5 mr-2 text-muted-foreground" />
+            <div>
+              <p className="text-xs text-muted-foreground">Timeline</p>
+              <p className="text-sm font-medium">{project.timeline} weeks</p>
+            </div>
           </div>
         </div>
         
+        {/* Show progress for in-progress or under-review projects */}
         {(project.status === "in_progress" || project.status === "under_review") && (
-          <div className="mb-2">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Progress</span>
-              <span>{project.progress}%</span>
+          <div className="mb-1">
+            <div className="flex justify-between items-center text-xs mb-1.5">
+              <div className="flex items-center">
+                <TrendingUp className="h-3 w-3 mr-1 text-muted-foreground" />
+                <span className="text-muted-foreground">Progress</span>
+              </div>
+              <span className="font-medium">{project.progress}%</span>
             </div>
-            <Progress value={project.progress} className="h-2" />
+            <Progress 
+              value={project.progress} 
+              className="h-1.5 bg-muted" 
+              indicatorClassName={getProgressColor(project.progress)}
+            />
           </div>
         )}
-      </div>
+        
+        {/* Payment status for projects with payment < 100% */}
+        {project.paymentStatus < 100 && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className={`flex items-center ${paymentInfo.color}`}>
+              <CircleDollarSign className="h-4 w-4 mr-1.5" />
+              <span className="text-sm font-medium">{paymentInfo.label}</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
       
-      <div className="bg-muted px-5 py-3 border-t border-border flex justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary font-medium"
-          asChild
-        >
-          <Link href={`/projects/${project.id}`}>View Details</Link>
-        </Button>
-        {getPaymentStatusButton()}
-      </div>
+      <CardFooter className="bg-muted/50 px-5 py-3 border-t border-border">
+        {getActionButton()}
+      </CardFooter>
     </Card>
   );
 }
