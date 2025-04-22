@@ -9,7 +9,7 @@ import type {
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
-import { eq, desc, inArray, and, asc } from "drizzle-orm";
+import { eq, desc, inArray, and, asc, count } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import createMemoryStore from "memorystore";
@@ -365,7 +365,7 @@ export class DatabaseStorage implements IStorage {
   
   async getUnreadNotificationCount(userId: number): Promise<number> {
     const result = await db
-      .select({ count: count() })
+      .select({ count: count(notifications.id) })
       .from(notifications)
       .where(and(
         eq(notifications.userId, userId),
