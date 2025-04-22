@@ -836,26 +836,35 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       const attachments: Array<{name: string, url: string}> = [];
                       
                       if (hasAttachments) {
-                        // Pisahkan konten pesan dan lampiran
-                        const parts = feedback.content.split('\n\n');
-                        mainContent = parts[0];
-                        
-                        // Ekstrak semua lampiran jika ada
-                        if (parts.length > 1) {
-                          const attachmentText = parts.slice(1).join('\n\n');
-                          // Gunakan regex normal untuk mencocokkan semua attachment
-                          const regex = /\[Attachment: (.+?)\]\((.+?)\)/g;
-                          let match;
+                        try {
+                          // Pisahkan konten pesan dan lampiran
+                          const parts = feedback.content.split('\n\n');
+                          mainContent = parts[0];
                           
-                          // Gunakan exec dalam loop untuk mendapatkan semua matches
-                          while ((match = regex.exec(attachmentText)) !== null) {
-                            if (match[1] && match[2]) {
+                          // Ekstrak semua lampiran jika ada
+                          if (parts.length > 1) {
+                            // Dapatkan bagian attachment dari pesan
+                            const attachmentLines = parts.slice(1)
+                              .filter(line => line.includes('[Attachment:'));
+                            
+                            // Proses setiap baris attachment
+                            for (const line of attachmentLines) {
+                              // Ekstrak nama file
+                              const nameMatch = line.match(/\[Attachment: (.+?)\]/);
+                              if (!nameMatch || !nameMatch[1]) continue;
+                              
+                              // Ekstrak URL
+                              const urlMatch = line.match(/\]\((.+?)\)/);
+                              if (!urlMatch || !urlMatch[1]) continue;
+                              
                               attachments.push({
-                                name: match[1],
-                                url: match[2]
+                                name: nameMatch[1],
+                                url: urlMatch[1]
                               });
                             }
                           }
+                        } catch (error) {
+                          console.error("Error parsing attachments:", error);
                         }
                       }
                       
@@ -876,7 +885,27 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                     rel="noopener noreferrer"
                                     className="flex items-center p-2 rounded border border-border hover:bg-muted/50 transition-colors"
                                   >
-                                    <FileIcon className="h-3 w-3 mr-2 flex-shrink-0" />
+                                    {attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
+                                      <img 
+                                        src={attachment.url} 
+                                        alt={decodeURIComponent(attachment.name)} 
+                                        className="h-5 w-5 object-cover rounded mr-2 flex-shrink-0" 
+                                        onError={(e) => {
+                                          e.currentTarget.src = ''; 
+                                          e.currentTarget.style.display = 'none';
+                                          // Mencari elemen FileIcon dengan getElementById
+                                          const fileIconElement = document.getElementById(`attachment-icon-${i}`);
+                                          if (fileIconElement) {
+                                            fileIconElement.style.display = 'block';
+                                          }
+                                        }}
+                                      />
+                                    ) : null}
+                                    <FileIcon 
+                                      id={`attachment-icon-${i}`} 
+                                      className="h-3 w-3 mr-2 flex-shrink-0" 
+                                      style={{display: attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} 
+                                    />
                                     <span className="text-xs truncate">{decodeURIComponent(attachment.name)}</span>
                                   </a>
                                 ))}
@@ -957,7 +986,23 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                         {uploadedFiles.map((file, index) => (
                           <li key={index} className="flex items-center justify-between bg-muted/50 rounded-md p-2">
                             <div className="flex items-center">
-                              <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                              {file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
+                                <img 
+                                  src={file.url} 
+                                  alt={decodeURIComponent(file.name)} 
+                                  className="h-7 w-7 object-cover rounded mr-2 flex-shrink-0" 
+                                  onError={(e) => {
+                                    // Menyembunyikan gambar jika error
+                                    e.currentTarget.style.display = 'none';
+                                    // Menggunakan getElementById sebagai fallback untuk fileIcon
+                                    const fileIconElement = document.getElementById(`file-icon-${index}`);
+                                    if (fileIconElement) {
+                                      fileIconElement.style.display = 'block';
+                                    }
+                                  }}
+                                />
+                              ) : null}
+                              <FileIcon id={`file-icon-${index}`} className="h-4 w-4 mr-2 flex-shrink-0" style={{display: file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} />
                               <span className="text-sm truncate max-w-[180px]">{decodeURIComponent(file.name)}</span>
                             </div>
                             <button
