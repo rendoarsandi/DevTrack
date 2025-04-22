@@ -806,7 +806,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           </TabsContent>
 
           <TabsContent value="chat" className="mt-0">
-            <LiveChat projectId={projectId} />
+            {/* Conditionally render LiveChat only when project data is available */}
+            {project && <LiveChat projectId={projectId} />}
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-4 mt-0">
