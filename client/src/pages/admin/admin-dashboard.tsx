@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project } from "@shared/schema";
 import { statusColorMap, formatStatusLabel } from "@/lib/utils";
 import { 
+  AlertTriangle,
   ArrowRight, 
   BarChart, 
   CheckCircle, 
@@ -22,27 +23,74 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [projectFetchError, setProjectFetchError] = useState<string | null>(null);
   
   // Fetch all projects (admin view shows all projects)
-  const { data: projects = [], isLoading } = useQuery<Project[]>({
+  const { 
+    data: projects = [], 
+    isLoading
+  } = useQuery<Project[]>({
     queryKey: ["/api/admin/projects"],
     refetchOnWindowFocus: false,
+    retry: 1,
+    staleTime: 60000,
   });
+
+  // Handle errors with useEffect instead of onError callback
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch("/api/admin/projects", {
+          credentials: "include",
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error fetching projects:", errorText);
+          
+          setProjectFetchError(errorText);
+          toast({
+            title: "Error fetching projects",
+            description: errorText || "Please try again later",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        if (error instanceof Error) {
+          setProjectFetchError(error.message);
+          toast({
+            title: "Error fetching projects",
+            description: error.message || "Please try again later",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    
+    fetchProjects();
+  }, [toast]);
+  
+  // Safe projects array that handles any type issues
+  const safeProjects: Project[] = Array.isArray(projects) ? projects : [];
   
   // Group projects by status for stats
   const projectStats = {
-    awaiting_dp: projects.filter(p => p.status === "awaiting_dp").length,
-    in_progress: projects.filter(p => p.status === "in_progress").length,
-    under_review: projects.filter(p => p.status === "under_review").length,
-    completed: projects.filter(p => p.status === "completed").length,
-    total: projects.length,
+    awaiting_dp: safeProjects.filter((p: Project) => p.status === "awaiting_dp").length,
+    in_progress: safeProjects.filter((p: Project) => p.status === "in_progress").length,
+    under_review: safeProjects.filter((p: Project) => p.status === "under_review").length,
+    completed: safeProjects.filter((p: Project) => p.status === "completed").length,
+    total: safeProjects.length,
   };
   
   // Calculate total value of all projects
-  const totalValue = projects.reduce((sum, project) => sum + project.quote, 0);
+  const totalValue = safeProjects.reduce((sum: number, project: Project) => sum + project.quote, 0);
   
   // Format currency number
   const formatCurrency = (amount: number) => {
@@ -99,6 +147,21 @@ export default function AdminDashboard() {
           </p>
         </div>
         
+        {/* Error Display */}
+        {projectFetchError && (
+          <Card className="border-destructive">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 text-destructive">
+                <AlertTriangle className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">Error loading projects</h3>
+                  <p className="text-sm">{projectFetchError}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
@@ -138,7 +201,7 @@ export default function AdminDashboard() {
               <div className="flex justify-center p-6">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : projects.length === 0 ? (
+            ) : safeProjects.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
                 No project requests found
               </div>
@@ -156,7 +219,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.slice(0, 5).map((project) => {
+                  {safeProjects.slice(0, 5).map((project: Project) => {
                     const statusColor = statusColorMap[project.status];
                     return (
                       <TableRow key={project.id}>
@@ -206,14 +269,14 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center pb-2 border-b">
                   <span className="font-medium">Average Project Value</span>
                   <span className="font-bold">
-                    {formatCurrency(projects.length ? totalValue / projects.length : 0)}
+                    {formatCurrency(safeProjects.length ? totalValue / safeProjects.length : 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b">
                   <span className="font-medium">Highest Project Value</span>
                   <span className="font-bold">
                     {formatCurrency(
-                      projects.length ? Math.max(...projects.map(p => p.quote)) : 0
+                      safeProjects.length ? Math.max(...safeProjects.map((p: Project) => p.quote)) : 0
                     )}
                   </span>
                 </div>
@@ -230,8 +293,8 @@ export default function AdminDashboard() {
                 {Object.entries(projectStats).map(([status, count]) => {
                   if (status === 'total') return null;
                   
-                  const percentage = projects.length 
-                    ? Math.round((count / projects.length) * 100) 
+                  const percentage = safeProjects.length 
+                    ? Math.round((count / safeProjects.length) * 100) 
                     : 0;
                   
                   return (
