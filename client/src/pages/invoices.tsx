@@ -4,12 +4,12 @@ import { InvoiceList } from "@/components/invoice/InvoiceList";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 export default function InvoicesPage() {
   const { data: invoices, isLoading, error } = useInvoices();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   
   // Admin can create new invoices
   const isAdmin = user?.role === "admin";

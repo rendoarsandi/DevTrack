@@ -1,37 +1,47 @@
 import React, { useState } from "react";
-import { useNavigate } from "wouter";
+import { Link } from "wouter";
 import { Invoice } from "@shared/schema";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Eye, FileText, CreditCard } from "lucide-react";
+import { SearchIcon, CalendarIcon, FilterIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface InvoiceListProps {
   invoices: Invoice[];
-  title?: string;
-  description?: string;
   showProjectInfo?: boolean;
 }
 
-export function InvoiceList({ 
-  invoices, 
-  title = "Invoices", 
-  description = "Manage your invoices and payments",
-  showProjectInfo = false
-}: InvoiceListProps) {
-  const navigate = useNavigate();
+export function InvoiceList({ invoices, showProjectInfo = false }: InvoiceListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   
-  // Function to get status badge
+  // Function to get status badge with appropriate styling
   function getStatusBadge(status: string) {
     switch(status) {
       case 'draft':
@@ -45,89 +55,165 @@ export function InvoiceList({
       case 'overdue':
         return <Badge variant="destructive">Overdue</Badge>;
       case 'cancelled':
-        return <Badge variant="outline">Cancelled</Badge>;
+        return <Badge variant="outline" className="opacity-70">Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   }
   
-  // Function to get invoice type badge
-  function getTypeBadge(type: string) {
-    switch(type) {
-      case 'dp':
-        return <Badge variant="outline">Down Payment</Badge>;
-      case 'final':
-        return <Badge variant="outline">Final Payment</Badge>;
-      case 'milestone':
-        return <Badge variant="outline">Milestone</Badge>;
-      case 'full':
-        return <Badge variant="outline">Full Payment</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
-  }
-
+  // Filter invoices based on search term and status filters
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = 
+      searchTerm === "" || 
+      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.title.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = 
+      statusFilter.length === 0 || 
+      statusFilter.includes(invoice.status);
+    
+    return matchesSearch && matchesStatus;
+  });
+  
+  // Toggle status filter
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilter(prev => 
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+  
+  // Sort invoices by due date (most recent first)
+  const sortedInvoices = [...filteredInvoices].sort((a, b) => 
+    new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+  );
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle>Invoice List</CardTitle>
+        <CardDescription>
+          View and manage all invoices
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {invoices.length === 0 ? (
-          <div className="text-center p-4">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-500">No invoices found</p>
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Search */}
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search invoices..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        ) : (
+          
+          {/* Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <FilterIcon className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("draft")}
+                onCheckedChange={() => toggleStatusFilter("draft")}
+              >
+                Draft
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("sent")}
+                onCheckedChange={() => toggleStatusFilter("sent")}
+              >
+                Sent
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("paid")}
+                onCheckedChange={() => toggleStatusFilter("paid")}
+              >
+                Paid
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("partial")}
+                onCheckedChange={() => toggleStatusFilter("partial")}
+              >
+                Partially Paid
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("overdue")}
+                onCheckedChange={() => toggleStatusFilter("overdue")}
+              >
+                Overdue
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter.includes("cancelled")}
+                onCheckedChange={() => toggleStatusFilter("cancelled")}
+              >
+                Cancelled
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Invoice Number</TableHead>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Title</TableHead>
                 {showProjectInfo && <TableHead>Project</TableHead>}
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
                 <TableHead>Due Date</TableHead>
+                <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  {showProjectInfo && <TableCell>{invoice.title}</TableCell>}
-                  <TableCell>{getTypeBadge(invoice.type)}</TableCell>
-                  <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                  <TableCell>{format(new Date(invoice.dueDate), "PP")}</TableCell>
-                  <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate(`/invoices/${invoice.id}`)}
-                        title="View Invoice"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {invoice.status !== 'paid' && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => navigate(`/invoices/${invoice.id}/pay`)}
-                          title="Make Payment"
-                        >
-                          <CreditCard className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+              {sortedInvoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={showProjectInfo ? 6 : 5} className="text-center h-24 text-muted-foreground">
+                    No invoices found
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                sortedInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell>
+                      <Link href={`/invoices/${invoice.id}`} className="text-primary hover:underline">
+                        {invoice.invoiceNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{invoice.title}</TableCell>
+                    {showProjectInfo && (
+                      <TableCell>
+                        {invoice.projectId ? (
+                          <Link href={`/projects/${invoice.projectId}`} className="text-primary hover:underline">
+                            Project #{invoice.projectId}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <div className="flex items-center">
+                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                        {format(new Date(invoice.dueDate), "PP")}
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

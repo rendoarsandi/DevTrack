@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useRoute, useNavigate } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useInvoice } from "@/hooks/use-invoices";
 import { InvoiceDetail } from "@/components/invoice/InvoiceDetail";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ export default function InvoiceDetailPage() {
   // Get invoice ID from URL
   const [, params] = useRoute("/invoices/:id");
   const id = params ? parseInt(params.id) : 0;
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   
   // Fetch invoice data
   const { data: invoice, isLoading, error } = useInvoice(id);

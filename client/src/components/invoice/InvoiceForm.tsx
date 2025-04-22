@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -77,30 +77,30 @@ interface InvoiceFormProps {
 
 export function InvoiceForm({ invoice, projectId, clientId, onSuccess }: InvoiceFormProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const createInvoice = useCreateInvoice();
   const updateInvoice = useUpdateInvoice();
   
   // Define default values for form
-  const defaultValues: Partial<InvoiceFormValues> = {
-    status: "draft",
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-    ...invoice ? {
-      projectId: invoice.projectId,
-      clientId: invoice.clientId,
-      title: invoice.title,
-      description: invoice.description,
-      amount: invoice.amount.toString(),
-      type: invoice.type as any,
-      status: invoice.status as any,
-      dueDate: new Date(invoice.dueDate),
-      notes: invoice.notes || "",
-      termsAndConditions: invoice.termsAndConditions || "",
-    } : {
-      projectId: projectId,
-      clientId: clientId,
-    }
-  };
+  const defaultValues: Partial<InvoiceFormValues> = invoice 
+    ? {
+        projectId: invoice.projectId,
+        clientId: invoice.clientId,
+        title: invoice.title,
+        description: invoice.description,
+        amount: invoice.amount.toString(),
+        type: invoice.type as any,
+        status: invoice.status as any,
+        dueDate: new Date(invoice.dueDate),
+        notes: invoice.notes || "",
+        termsAndConditions: invoice.termsAndConditions || "",
+      } 
+    : {
+        projectId: projectId,
+        clientId: clientId,
+        status: "draft",
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+      };
   
   // Initialize form
   const form = useForm<InvoiceFormValues>({

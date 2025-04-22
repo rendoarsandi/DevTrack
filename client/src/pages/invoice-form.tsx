@@ -1,5 +1,5 @@
 import React from "react";
-import { useRoute, useNavigate } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useInvoice } from "@/hooks/use-invoices";
 import { InvoiceForm } from "@/components/invoice/InvoiceForm";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ export default function InvoiceFormPage() {
   const [, params] = useRoute("/invoices/:id/edit");
   const [isNewRoute] = useRoute("/invoices/new");
   const id = params ? parseInt(params.id) : 0;
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   
   // Fetch invoice data if editing
   const { data: invoice, isLoading, error } = useInvoice(id);

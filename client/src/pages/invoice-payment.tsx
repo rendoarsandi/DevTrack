@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useRoute, useNavigate } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useInvoice } from "@/hooks/use-invoices";
 import { useCreatePayment } from "@/hooks/use-payments";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,7 +51,7 @@ export default function InvoicePaymentPage() {
   // Get invoice ID from URL
   const [, params] = useRoute("/invoices/:id/pay");
   const id = params ? parseInt(params.id) : 0;
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   
   // State for file upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

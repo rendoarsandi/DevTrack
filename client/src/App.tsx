@@ -14,6 +14,10 @@ import ProjectDetail from "@/pages/project-detail";
 import Messages from "@/pages/messages";
 import Payments from "@/pages/payments";
 import Settings from "@/pages/settings";
+import InvoicesPage from "@/pages/invoices";
+import InvoiceDetailPage from "@/pages/invoice-detail";
+import InvoiceFormPage from "@/pages/invoice-form";
+import InvoicePaymentPage from "@/pages/invoice-payment";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import AdminProjectDetail from "@/pages/admin/project-detail";
 import AdminProjectEdit from "@/pages/admin/project-edit";
@@ -36,12 +40,22 @@ function Router() {
       <ProtectedRoute path="/messages" component={Messages} />
       <ProtectedRoute path="/payments" component={Payments} />
       <ProtectedRoute path="/settings" component={Settings} />
+      
+      {/* Invoice routes */}
+      <ProtectedRoute path="/invoices" component={InvoicesPage} />
+      <ProtectedRoute path="/invoices/:id" component={InvoiceDetailPage} />
+      <ProtectedRoute path="/invoices/:id/pay" component={InvoicePaymentPage} />
+      <ProtectedAdminRoute path="/invoices/new" component={InvoiceFormPage} />
+      <ProtectedAdminRoute path="/invoices/:id/edit" component={InvoiceFormPage} />
+      
+      {/* Admin routes */}
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
       <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
       <ProtectedAdminRoute path="/admin/projects/:id/edit" component={AdminProjectEdit} />
       <ProtectedAdminRoute path="/admin/users" component={AdminUsers} />
       <ProtectedAdminRoute path="/admin/analytics" component={AdminAnalytics} />
       <ProtectedAdminRoute path="/admin/settings" component={AdminSettings} />
+      
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
