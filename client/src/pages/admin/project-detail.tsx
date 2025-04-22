@@ -843,8 +843,11 @@ export default function AdminProjectDetail() {
           
           <TabsContent value="feedback" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Client Messages</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2 text-blue-600" />
+                  <span>Client Feedback & Revisions</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {feedback.length === 0 ? (
@@ -860,12 +863,68 @@ export default function AdminProjectDetail() {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between">
-                            <p className="font-medium">Message</p>
+                            <p className="font-medium">
+                              {item.content.includes("REQUEST CHANGES:") ? (
+                                <span className="text-orange-600">Revision Request</span>
+                              ) : item.content.includes("REVIEW:") ? (
+                                <span className="text-blue-600">Project Review</span>
+                              ) : (
+                                "Message"
+                              )}
+                            </p>
                             <span className="text-sm text-muted-foreground">
                               {formatDateTime(item.createdAt)}
                             </span>
                           </div>
-                          <p>{item.content}</p>
+                          <div className="mt-2 whitespace-pre-wrap">
+                            {item.content.includes("REQUEST CHANGES:") ? (
+                              <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
+                                <span className="block text-xs font-medium text-orange-800 mb-1">
+                                  Client Requested Changes:
+                                </span>
+                                {item.content.replace("REQUEST CHANGES:", "")}
+                              </div>
+                            ) : item.content.includes("REVIEW:") ? (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <span className="block text-xs font-medium text-blue-800 mb-1">
+                                  Project Review Feedback:
+                                </span>
+                                {item.content.replace("REVIEW:", "")}
+                              </div>
+                            ) : (
+                              <p>{item.content}</p>
+                            )}
+                          </div>
+                          
+                          {/* Tampilkan lampiran jika ada */}
+                          {item && 'attachments' in item && item.attachments && Array.isArray(item.attachments) && item.attachments.length > 0 && (
+                            <div className="mt-3">
+                              <h4 className="text-xs font-medium text-muted-foreground mb-2">Lampiran:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {(item.attachments as any[]).map((attachment: any, index: number) => {
+                                  const fileName = typeof attachment === 'string' 
+                                    ? attachment 
+                                    : (attachment && typeof attachment === 'object' && 'name' in attachment) 
+                                      ? String(attachment.name)
+                                      : `file-${index}`;
+                                  
+                                  return (
+                                    <a 
+                                      key={index}
+                                      href={`/api/files/${fileName}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
+                                    >
+                                      <File className="h-4 w-4 mr-2" />
+                                      <span className="text-xs font-medium">{fileName}</span>
+                                    </a>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
                           <Separator className="my-2" />
                         </div>
                       </div>
