@@ -21,8 +21,14 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
+    // Clean filename dari karakter khusus
+    let cleanedOriginalName = file.originalname
+      .replace(/[^\w\s.-]/g, '') // Hapus karakter khusus kecuali underscore, spasi, titik, dan dash
+      .replace(/\s+/g, '-');     // Ganti spasi dengan dash
+    
     // Generate a unique name for the file to prevent collisions
-    const uniqueName = `${randomUUID()}-${file.originalname}`;
+    const uniqueName = `${randomUUID()}-${cleanedOriginalName}`;
+    console.log('Saving file as:', uniqueName);
     cb(null, uniqueName);
   }
 });
@@ -98,37 +104,87 @@ export function setupFileUpload(app: Express) {
   
   // Endpoint to serve uploaded files
   app.get('/api/files/:filename', (req: Request, res: Response) => {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadDir, filename);
-    
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'File not found' });
+    try {
+      // Decode the URL-encoded filename
+      const filename = decodeURIComponent(req.params.filename);
+      console.log('Accessing file:', filename);
+      
+      const filePath = path.join(uploadDir, filename);
+      console.log('Full file path:', filePath);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        // Jika file tidak ditemukan, coba cari file dari daftar file yang ada
+        console.log('File not found directly, searching in directory...');
+        const files = fs.readdirSync(uploadDir);
+        
+        // Log semua file yang ada di direktori
+        console.log('Available files:', files);
+        
+        // Coba cari file yang mengandung UUID dari filename
+        const filenameUUID = filename.split('-')[0]; // Ambil UUID dari bagian pertama nama file
+        const matchingFile = files.find(file => file.includes(filenameUUID));
+        
+        if (matchingFile) {
+          console.log('Found matching file:', matchingFile);
+          // Jika menemukan file yang cocok, gunakan file tersebut
+          return res.sendFile(path.join(uploadDir, matchingFile));
+        }
+        
+        return res.status(404).json({ message: 'File not found' });
+      }
+      
+      // Send the file
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error('Error serving file:', error);
+      return res.status(500).json({ 
+        message: 'Error serving file', 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
-    
-    // Send the file
-    res.sendFile(filePath);
   });
   
   // Endpoint to delete a file
   app.delete('/api/files/:filename', (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
-    const filename = req.params.filename;
-    const filePath = path.join(uploadDir, filename);
-    
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-    
-    // Delete the file
     try {
+      // Decode the URL-encoded filename
+      const filename = decodeURIComponent(req.params.filename);
+      console.log('Deleting file:', filename);
+      
+      const filePath = path.join(uploadDir, filename);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        // Jika file tidak ditemukan, coba cari file dari daftar file yang ada
+        console.log('File not found directly, searching in directory...');
+        const files = fs.readdirSync(uploadDir);
+        
+        // Coba cari file yang mengandung UUID dari filename
+        const filenameUUID = filename.split('-')[0]; // Ambil UUID dari bagian pertama nama file
+        const matchingFile = files.find(file => file.includes(filenameUUID));
+        
+        if (matchingFile) {
+          console.log('Found matching file:', matchingFile);
+          // Jika menemukan file yang cocok, hapus file tersebut
+          fs.unlinkSync(path.join(uploadDir, matchingFile));
+          return res.sendStatus(204);
+        }
+        
+        return res.status(404).json({ message: 'File not found' });
+      }
+      
+      // Delete the file
       fs.unlinkSync(filePath);
       return res.sendStatus(204);
     } catch (error) {
       console.error('File deletion error:', error);
-      return res.status(500).json({ message: 'File deletion failed' });
+      return res.status(500).json({ 
+        message: 'File deletion failed',
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   });
 }
