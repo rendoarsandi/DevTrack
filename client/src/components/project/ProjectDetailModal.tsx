@@ -188,6 +188,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         formData.append('files', files[i]);
       }
       
+      console.log("Uploading files...");
+      
       // Send files to the server
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -202,7 +204,25 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       
       // Get uploaded file data
       const uploadedData = await response.json();
-      setUploadedFiles(prev => [...prev, ...uploadedData]);
+      console.log("Files uploaded successfully:", uploadedData);
+      
+      // Buat URL absolut untuk setiap file
+      const absoluteUrlData = uploadedData.map(file => {
+        // Pastikan URL dimulai dengan / jika belum
+        const url = file.url.startsWith('/') ? file.url : `/${file.url}`;
+        return {
+          ...file,
+          // Gunakan origin dari current window jika tersedia
+          url: typeof window !== 'undefined' 
+            ? `${window.location.origin}${url}`
+            : url
+        };
+      });
+      
+      console.log("Absolute URLs created:", absoluteUrlData);
+      
+      // Simpan file dengan URL absolut
+      setUploadedFiles(prev => [...prev, ...absoluteUrlData]);
       
       // Success message
       toast({
@@ -251,11 +271,22 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       let content = feedbackContent;
       
       if (uploadedFiles.length > 0) {
-        const attachmentsList = uploadedFiles.map(file => 
-          `[Attachment: ${file.name}](${file.url})`
-        ).join('\n');
+        // Gunakan format JSON untuk menyimpan informasi attachment
+        const attachmentsData = {
+          attachments: uploadedFiles.map(file => ({
+            name: file.name,
+            url: file.url,
+            type: file.type
+          }))
+        };
         
-        content = `${content}\n\n${attachmentsList}`;
+        // Encode sebagai JSON string
+        const attachmentsJSON = JSON.stringify(attachmentsData);
+        
+        // Tambahkan ke pesan dengan tag pembatas
+        content = `${content}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        
+        console.log("Sending message with attachments:", content);
       }
       
       submitFeedbackMutation.mutate(content);
@@ -280,11 +311,22 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       
       // Add attachments info if any
       if (uploadedFiles.length > 0) {
-        const attachmentsList = uploadedFiles.map(file => 
-          `[Attachment: ${file.name}](${file.url})`
-        ).join('\n');
+        // Gunakan format JSON untuk menyimpan informasi attachment
+        const attachmentsData = {
+          attachments: uploadedFiles.map(file => ({
+            name: file.name,
+            url: file.url,
+            type: file.type
+          }))
+        };
         
-        message = `${message}\n\n${attachmentsList}`;
+        // Encode sebagai JSON string
+        const attachmentsJSON = JSON.stringify(attachmentsData);
+        
+        // Tambahkan ke pesan dengan tag pembatas
+        message = `${message}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        
+        console.log("Sending accept message with attachments:", uploadedFiles.length);
       }
         
       // Use new dedicated endpoint for accepting project
@@ -345,11 +387,22 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       
       // Add attachments info if any
       if (uploadedFiles.length > 0) {
-        const attachmentsList = uploadedFiles.map(file => 
-          `[Attachment: ${file.name}](${file.url})`
-        ).join('\n');
+        // Gunakan format JSON untuk menyimpan informasi attachment
+        const attachmentsData = {
+          attachments: uploadedFiles.map(file => ({
+            name: file.name,
+            url: file.url,
+            type: file.type
+          }))
+        };
         
-        message = `${message}\n\n${attachmentsList}`;
+        // Encode sebagai JSON string
+        const attachmentsJSON = JSON.stringify(attachmentsData);
+        
+        // Tambahkan ke pesan dengan tag pembatas
+        message = `${message}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        
+        console.log("Sending request changes with attachments:", uploadedFiles.length);
       }
       
       // Use new dedicated endpoint for requesting changes
@@ -838,7 +891,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       // Penanganan lampiran dengan 2 metode berbeda
                       try {
                         // Metode 1: Cek apakah ada tag JSON dengan format baru
-                        const jsonDataMatch = feedback.content.match(/---ATTACHMENTS_DATA---\n(.*?)\n---END_ATTACHMENTS_DATA---/s);
+                        const jsonPattern = /---ATTACHMENTS_DATA---\n([\s\S]*?)\n---END_ATTACHMENTS_DATA---/;
+                        const jsonDataMatch = feedback.content.match(jsonPattern);
                         
                         if (jsonDataMatch && jsonDataMatch[1]) {
                           // Parse data JSON lampiran
@@ -850,7 +904,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               attachments.push(...jsonData.attachments);
                               
                               // Bersihkan pesan utama
-                              mainContent = feedback.content.replace(/\n\n---ATTACHMENTS_DATA---\n.*?\n---END_ATTACHMENTS_DATA---/s, '');
+                              mainContent = feedback.content.replace(/\n\n---ATTACHMENTS_DATA---\n[\s\S]*?\n---END_ATTACHMENTS_DATA---/, '');
                             }
                           } catch (jsonErr) {
                             console.error("Error parsing JSON attachments:", jsonErr);
