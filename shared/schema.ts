@@ -28,6 +28,7 @@ export const projects = pgTable("projects", {
   paymentStatus: integer("payment_status").notNull().default(0), // 0 = awaiting, 50 = half paid, 100 = fully paid
   createdAt: timestamp("created_at").notNull().defaultNow(),
   progress: integer("progress").notNull().default(0), // progress percentage
+  attachments: jsonb("attachments"), // for storing file references 
 });
 
 export const feedback = pgTable("feedback", {
@@ -72,6 +73,13 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
   clientId: true,
   quote: true,
   timeline: true,
+}).extend({
+  attachments: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    url: z.string(),
+    size: z.number(),
+  })).optional(),
 });
 
 export const insertFeedbackSchema = createInsertSchema(feedback).pick({
