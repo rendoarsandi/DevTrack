@@ -81,6 +81,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Create activity record for admin feedback
+      if (req.body.adminFeedback && req.body.adminFeedback !== project.adminFeedback) {
+        await storage.createActivity({
+          projectId: id,
+          type: "feedback",
+          content: `Admin provided feedback: ${req.body.adminFeedback}`,
+        });
+      }
+      
       return res.json(updatedProject);
     } catch (error) {
       if (error instanceof z.ZodError) {

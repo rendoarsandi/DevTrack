@@ -99,7 +99,7 @@ export class DatabaseStorage implements IStorage {
       .insert(projects)
       .values({
         ...insertProject,
-        status: "awaiting_dp",
+        status: "pending_review", // Start with pending review status
         paymentStatus: 0,
         progress: 0,
       })
@@ -140,6 +140,10 @@ export class DatabaseStorage implements IStorage {
     
     if (updateData.progress !== undefined) {
       updateValues.progress = updateData.progress;
+    }
+    
+    if (updateData.adminFeedback !== undefined) {
+      updateValues.adminFeedback = updateData.adminFeedback;
     }
     
     const [updatedProject] = await db
