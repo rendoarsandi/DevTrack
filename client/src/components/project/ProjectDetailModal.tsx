@@ -667,18 +667,18 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           
           {project.status === "under_review" && (
             <TabsContent value="review" className="space-y-4 mt-0">
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mb-4">
-                <h3 className="text-lg font-medium text-amber-800 mb-2">Evaluate Your Project</h3>
-                <p className="text-amber-700 mb-4">
-                  Your project is complete and ready for evaluation. Please provide your decision on whether to accept the project or request changes.
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-md mb-4">
+                <h3 className="text-lg font-medium text-purple-800 mb-2">Review Your Project</h3>
+                <p className="text-purple-700 mb-4">
+                  Your project is ready for review. Please provide your evaluation and decision below.
                 </p>
               </div>
               
               <div className="p-4 border rounded-lg space-y-6">
                 <div>
-                  <h3 className="font-semibold mb-2">Overall Evaluation</h3>
+                  <h3 className="font-semibold mb-2">Your Feedback</h3>
                   <Textarea 
-                    placeholder="Provide your comments about this project..." 
+                    placeholder="Provide your comments about this project (required for change requests)..."
                     className="min-h-[100px]"
                     value={feedbackContent}
                     onChange={(e) => setFeedbackContent(e.target.value)}
@@ -706,21 +706,49 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-                  <Button 
-                    variant="outline" 
-                    className="border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={handleRequestChanges}
-                  >
-                    Request Changes
-                  </Button>
-                  <Button 
-                    className="bg-secondary hover:bg-secondary/90"
-                    onClick={handleAcceptProject}
-                  >
-                    Accept Project
-                  </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-4 border rounded-lg bg-red-50 hover:bg-red-100 transition-colors">
+                    <h4 className="font-semibold mb-2 flex items-center text-red-700">
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Request Changes
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      If the project doesn't meet your requirements, request changes with specific feedback.
+                    </p>
+                    <Button 
+                      variant="destructive"
+                      className="w-full"
+                      onClick={handleRequestChanges}
+                      disabled={submitFeedbackMutation.isPending}
+                    >
+                      Request Changes
+                    </Button>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
+                    <h4 className="font-semibold mb-2 flex items-center text-green-700">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Accept Project
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      The project meets all requirements and is ready to be completed.
+                    </p>
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={handleAcceptProject}
+                      disabled={submitFeedbackMutation.isPending}
+                    >
+                      Accept Project
+                    </Button>
+                  </div>
                 </div>
+                
+                {submitFeedbackMutation.isPending && (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2Icon className="animate-spin h-6 w-6 text-primary mr-2" />
+                    <span>Processing your review...</span>
+                  </div>
+                )}
               </div>
             </TabsContent>
           )}
