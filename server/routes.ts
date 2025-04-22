@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+
 // Middleware to ensure user is an admin
 function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -56,6 +57,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(project);
     } catch (error) {
       console.error("Error fetching project details:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Endpoint for admin to get project feedback (including review messages)
+  app.get("/api/admin/projects/:id/feedback", adminAuthMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid project ID" });
+      
+      const project = await storage.getProject(id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      const feedback = await storage.getFeedbackByProject(id);
+      return res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching project feedback:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Endpoint for admin to get project activities
+  app.get("/api/admin/projects/:id/activities", adminAuthMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid project ID" });
+      
+      const project = await storage.getProject(id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      const activities = await storage.getActivitiesByProject(id);
+      return res.json(activities);
+    } catch (error) {
+      console.error("Error fetching project activities:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -610,5 +645,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
   return httpServer;
 }
