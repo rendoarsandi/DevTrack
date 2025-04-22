@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -10,12 +11,36 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// Middleware to ensure user is an admin
+function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
   
   // Setup file upload routes
   setupFileUpload(app);
+  
+  // Admin routes
+  app.get("/api/admin/projects", adminAuthMiddleware, async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      return res.json(projects);
+    } catch (error) {
+      console.error("Error fetching admin projects:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Projects Routes
   app.get("/api/projects", async (req, res) => {
