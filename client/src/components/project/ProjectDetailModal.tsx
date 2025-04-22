@@ -831,12 +831,33 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       // Periksa apakah pesan berisi tautan lampiran dengan format [Attachment: name](url)
                       const hasAttachments = feedback.content.includes('[Attachment:');
                       
-                      // Pisahkan konten pesan utama dan lampiran
+                      // Pisahkan konten pesan utama dan lampiran 
                       let mainContent = feedback.content;
-                      const attachments: Array<{name: string, url: string}> = [];
+                      const attachments: Array<{name: string, url: string, type?: string}> = [];
                       
-                      if (hasAttachments) {
-                        try {
+                      // Penanganan lampiran dengan 2 metode berbeda
+                      try {
+                        // Metode 1: Cek apakah ada tag JSON dengan format baru
+                        const jsonDataMatch = feedback.content.match(/---ATTACHMENTS_DATA---\n(.*?)\n---END_ATTACHMENTS_DATA---/s);
+                        
+                        if (jsonDataMatch && jsonDataMatch[1]) {
+                          // Parse data JSON lampiran
+                          try {
+                            const jsonData = JSON.parse(jsonDataMatch[1]);
+                            
+                            if (jsonData.attachments && Array.isArray(jsonData.attachments)) {
+                              // Gunakan data lampiran dari JSON
+                              attachments.push(...jsonData.attachments);
+                              
+                              // Bersihkan pesan utama
+                              mainContent = feedback.content.replace(/\n\n---ATTACHMENTS_DATA---\n.*?\n---END_ATTACHMENTS_DATA---/s, '');
+                            }
+                          } catch (jsonErr) {
+                            console.error("Error parsing JSON attachments:", jsonErr);
+                          }
+                        } 
+                        // Metode 2: Format lama dengan markdown
+                        else if (hasAttachments) {
                           // Pisahkan konten pesan dan lampiran
                           const parts = feedback.content.split('\n\n');
                           mainContent = parts[0];
@@ -844,28 +865,23 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                           // Ekstrak semua lampiran jika ada
                           if (parts.length > 1) {
                             // Dapatkan bagian attachment dari pesan
-                            const attachmentLines = parts.slice(1)
-                              .filter(line => line.includes('[Attachment:'));
+                            const attachmentText = parts.slice(1).join('\n\n');
+                            // Gunakan regex untuk mencocokkan semua attachment
+                            const regex = /\[Attachment: ([^\]]+)\]\(([^)]+)\)/g;
                             
-                            // Proses setiap baris attachment
-                            for (const line of attachmentLines) {
-                              // Ekstrak nama file
-                              const nameMatch = line.match(/\[Attachment: (.+?)\]/);
-                              if (!nameMatch || !nameMatch[1]) continue;
-                              
-                              // Ekstrak URL
-                              const urlMatch = line.match(/\]\((.+?)\)/);
-                              if (!urlMatch || !urlMatch[1]) continue;
-                              
-                              attachments.push({
-                                name: nameMatch[1],
-                                url: urlMatch[1]
-                              });
+                            let match;
+                            while ((match = regex.exec(attachmentText)) !== null) {
+                              if (match[1] && match[2]) {
+                                attachments.push({
+                                  name: match[1],
+                                  url: match[2]
+                                });
+                              }
                             }
                           }
-                        } catch (error) {
-                          console.error("Error parsing attachments:", error);
                         }
+                      } catch (error) {
+                        console.error("Error parsing attachments:", error);
                       }
                       
                       return (
