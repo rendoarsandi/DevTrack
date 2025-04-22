@@ -14,6 +14,9 @@ import ProjectDetail from "@/pages/project-detail";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import AdminProjectDetail from "@/pages/admin/project-detail";
 import AdminProjectEdit from "@/pages/admin/project-edit";
+import AdminUsers from "@/pages/admin/admin-users";
+import AdminAnalytics from "@/pages/admin/admin-analytics";
+import AdminSettings from "@/pages/admin/admin-settings";
 
 // Wrapper for components that might return null to satisfy Route's component type requirement
 const SafeProjectDetail = () => {
@@ -30,6 +33,9 @@ function Router() {
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
       <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
       <ProtectedAdminRoute path="/admin/projects/:id/edit" component={AdminProjectEdit} />
+      <ProtectedAdminRoute path="/admin/users" component={AdminUsers} />
+      <ProtectedAdminRoute path="/admin/analytics" component={AdminAnalytics} />
+      <ProtectedAdminRoute path="/admin/settings" component={AdminSettings} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
