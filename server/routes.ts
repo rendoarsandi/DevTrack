@@ -11,8 +11,9 @@ import {
   insertProjectSchema, updateProjectSchema, 
   insertFeedbackSchema, insertMilestoneSchema, 
   updateMilestoneSchema, insertNotificationSchema,
-  updateNotificationSchema,
-  projects, activities, insertActivitySchema
+  updateNotificationSchema, insertInvoiceSchema, updateInvoiceSchema,
+  insertPaymentSchema, projects, activities, insertActivitySchema,
+  invoices, payments
 } from "@shared/schema";
 import { z } from "zod";
 import { parse } from "url";
@@ -959,6 +960,254 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   }
+  
+  // ============ INVOICE API ENDPOINTS ============
+  
+  // Get all invoices (admin only)
+  app.get("/api/admin/invoices", adminAuthMiddleware, async (req, res) => {
+    try {
+      const allInvoices = await storage.getInvoices();
+      return res.json(allInvoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all invoices for a specific client (admin or client)
+  app.get("/api/invoices", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      let invoiceList;
+      
+      if (req.user.role === "admin") {
+        // Admin kan melihat semua invoice
+        invoiceList = await storage.getInvoices();
+      } else {
+        // Client hanya dapat melihat invoice mereka sendiri
+        invoiceList = await storage.getInvoicesByClient(req.user.id);
+      }
+      
+      return res.json(invoiceList);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get invoices for a specific project
+  app.get("/api/projects/:id/invoices", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const projectId = parseInt(req.params.id);
+    if (isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+    
+    try {
+      const project = await storage.getProject(projectId);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      // Pastikan pengguna adalah client yang memiliki proyek atau admin
+      if (req.user.role !== "admin" && project.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const invoiceList = await storage.getInvoicesByProject(projectId);
+      return res.json(invoiceList);
+    } catch (error) {
+      console.error("Error fetching project invoices:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get a specific invoice by ID
+  app.get("/api/invoices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const invoiceId = parseInt(req.params.id);
+    if (isNaN(invoiceId)) return res.status(400).json({ message: "Invalid invoice ID" });
+    
+    try {
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+      
+      // Pastikan pengguna adalah client yang memiliki invoice atau admin
+      if (req.user.role !== "admin" && invoice.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      return res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create a new invoice (admin only)
+  app.post("/api/invoices", adminAuthMiddleware, async (req, res) => {
+    try {
+      const validatedData = insertInvoiceSchema.parse(req.body);
+      
+      // Validasi project dan client
+      const project = await storage.getProject(validatedData.projectId);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      const invoice = await storage.createInvoice(validatedData);
+      return res.status(201).json(invoice);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Update an invoice (admin only)
+  app.patch("/api/invoices/:id", adminAuthMiddleware, async (req, res) => {
+    const invoiceId = parseInt(req.params.id);
+    if (isNaN(invoiceId)) return res.status(400).json({ message: "Invalid invoice ID" });
+    
+    try {
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+      
+      const validatedData = updateInvoiceSchema.parse({
+        ...req.body,
+        id: invoiceId,
+      });
+      
+      const updatedInvoice = await storage.updateInvoice(validatedData);
+      return res.json(updatedInvoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // ============ PAYMENT API ENDPOINTS ============
+  
+  // Get all payments (admin only)
+  app.get("/api/admin/payments", adminAuthMiddleware, async (req, res) => {
+    try {
+      const payments = await storage.getPayments();
+      return res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get payments for a specific invoice
+  app.get("/api/invoices/:id/payments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const invoiceId = parseInt(req.params.id);
+    if (isNaN(invoiceId)) return res.status(400).json({ message: "Invalid invoice ID" });
+    
+    try {
+      const invoice = await storage.getInvoice(invoiceId);
+      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+      
+      // Pastikan pengguna adalah client yang memiliki invoice atau admin
+      if (req.user.role !== "admin" && invoice.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const paymentList = await storage.getPaymentsByInvoice(invoiceId);
+      return res.json(paymentList);
+    } catch (error) {
+      console.error("Error fetching invoice payments:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create a payment record (admin or client)
+  app.post("/api/payments", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const validatedData = insertPaymentSchema.parse(req.body);
+      
+      // Admin dapat membuat pembayaran untuk invoice apapun
+      // Client hanya dapat membuat pembayaran untuk invoice mereka sendiri
+      if (req.user.role !== "admin") {
+        const invoice = await storage.getInvoice(validatedData.invoiceId);
+        if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+        
+        if (invoice.clientId !== req.user.id) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+        
+        // Set clientId to current user if not admin
+        validatedData.clientId = req.user.id;
+      }
+      
+      const payment = await storage.createPayment(validatedData);
+      return res.status(201).json(payment);
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Webhook untuk Xendit (tanpa autentikasi)
+  app.post("/api/webhooks/xendit", async (req, res) => {
+    try {
+      // Validasi Xendit signature (akan diimplementasikan nanti)
+      // For now, just log the webhook data
+      console.log("Received Xendit webhook:", req.body);
+      
+      const { event, data } = req.body;
+      
+      // Handle berbagai tipe event dari Xendit
+      if (event === "invoice.paid") {
+        const xenditInvoiceId = data.id;
+        
+        // Cari invoice berdasarkan Xendit ID
+        const [invoice] = await db
+          .select()
+          .from(invoices)
+          .where(eq(invoices.xenditInvoiceId, xenditInvoiceId));
+        
+        if (invoice) {
+          // Update status invoice menjadi paid
+          await storage.updateInvoice({
+            id: invoice.id,
+            status: "paid",
+            paidDate: new Date(),
+            paidAmount: invoice.amount
+          });
+          
+          // Tambahkan payment record
+          await storage.createPayment({
+            invoiceId: invoice.id,
+            projectId: invoice.projectId,
+            clientId: invoice.clientId,
+            amount: invoice.amount,
+            method: data.payment_method || "xendit",
+            status: "success",
+            transactionId: data.payment_id,
+            notes: "Paid via Xendit",
+            metadata: data
+          });
+        }
+      }
+      
+      // Selalu return 200 untuk webhook
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error processing Xendit webhook:", error);
+      // Tetap return 200 untuk webhook (mencegah Xendit retry yang berlebihan)
+      return res.status(200).json({ success: false, error: "Error processing webhook" });
+    }
+  });
   
   return httpServer;
 }
