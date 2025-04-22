@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -45,6 +45,19 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const milestones = pgTable("milestones", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  progress: integer("progress").notNull().default(0), // progress percentage
+  order: integer("order").notNull(), // for ordering milestones
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -72,6 +85,14 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   content: true,
 });
 
+export const insertMilestoneSchema = createInsertSchema(milestones).pick({
+  projectId: true,
+  title: true,
+  description: true,
+  dueDate: true,
+  order: true,
+});
+
 export const updateProjectSchema = z.object({
   id: z.number(),
   status: z.enum(["awaiting_dp", "in_progress", "under_review", "completed"]).optional(),
@@ -79,14 +100,29 @@ export const updateProjectSchema = z.object({
   progress: z.number().min(0).max(100).optional(),
 });
 
+// Update schemas
+export const updateMilestoneSchema = z.object({
+  id: z.number(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  dueDate: z.date().optional(),
+  completed: z.boolean().optional(),
+  completedAt: z.date().optional(),
+  progress: z.number().min(0).max(100).optional(),
+  order: z.number().optional(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 export type UpdateProject = z.infer<typeof updateProjectSchema>;
+export type UpdateMilestone = z.infer<typeof updateMilestoneSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
+export type Milestone = typeof milestones.$inferSelect;

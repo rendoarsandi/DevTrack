@@ -1,8 +1,14 @@
-import { users, projects, feedback, activities } from "@shared/schema";
-import type { User, InsertUser, Project, InsertProject, Feedback, InsertFeedback, Activity, InsertActivity, UpdateProject } from "@shared/schema";
+import { users, projects, feedback, activities, milestones } from "@shared/schema";
+import type { 
+  User, InsertUser, 
+  Project, InsertProject, UpdateProject,
+  Feedback, InsertFeedback, 
+  Activity, InsertActivity,
+  Milestone, InsertMilestone, UpdateMilestone
+} from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, asc } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import createMemoryStore from "memorystore";
@@ -33,6 +39,13 @@ export interface IStorage {
   getActivitiesByClient(clientId: number): Promise<Activity[]>;
   getActivitiesByProject(projectId: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  
+  // Milestone methods
+  getMilestonesByProject(projectId: number): Promise<Milestone[]>;
+  getMilestone(id: number): Promise<Milestone | undefined>;
+  createMilestone(milestone: InsertMilestone): Promise<Milestone>;
+  updateMilestone(milestone: UpdateMilestone): Promise<Milestone | undefined>;
+  deleteMilestone(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: any;
@@ -190,6 +203,115 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return activity;
+  }
+  
+  // Milestone methods
+  async getMilestonesByProject(projectId: number): Promise<Milestone[]> {
+    return await db
+      .select()
+      .from(milestones)
+      .where(eq(milestones.projectId, projectId))
+      .orderBy(asc(milestones.order));
+  }
+  
+  async getMilestone(id: number): Promise<Milestone | undefined> {
+    const [milestone] = await db
+      .select()
+      .from(milestones)
+      .where(eq(milestones.id, id));
+    
+    return milestone || undefined;
+  }
+  
+  async createMilestone(insertMilestone: InsertMilestone): Promise<Milestone> {
+    // Get project to create related activity
+    const project = await this.getProject(insertMilestone.projectId);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const [milestone] = await db
+      .insert(milestones)
+      .values(insertMilestone)
+      .returning();
+    
+    // Create activity for milestone creation
+    await this.createActivity({
+      projectId: milestone.projectId,
+      type: "milestone",
+      content: `New milestone created: ${milestone.title}`
+    });
+    
+    return milestone;
+  }
+  
+  async updateMilestone(updateData: UpdateMilestone): Promise<Milestone | undefined> {
+    const milestone = await this.getMilestone(updateData.id);
+    if (!milestone) return undefined;
+    
+    const updateValues: Partial<Milestone> = {};
+    
+    if (updateData.title !== undefined) {
+      updateValues.title = updateData.title;
+    }
+    
+    if (updateData.description !== undefined) {
+      updateValues.description = updateData.description;
+    }
+    
+    if (updateData.dueDate !== undefined) {
+      updateValues.dueDate = updateData.dueDate;
+    }
+    
+    if (updateData.completed !== undefined) {
+      updateValues.completed = updateData.completed;
+      
+      // If milestone is completed, set completedAt date
+      if (updateData.completed && !milestone.completed) {
+        updateValues.completedAt = new Date();
+        
+        // Create activity for milestone completion
+        await this.createActivity({
+          projectId: milestone.projectId,
+          type: "milestone",
+          content: `Milestone completed: ${milestone.title}`
+        });
+      } else if (!updateData.completed && milestone.completed) {
+        updateValues.completedAt = null;
+      }
+    }
+    
+    if (updateData.progress !== undefined) {
+      updateValues.progress = updateData.progress;
+    }
+    
+    if (updateData.order !== undefined) {
+      updateValues.order = updateData.order;
+    }
+    
+    const [updatedMilestone] = await db
+      .update(milestones)
+      .set(updateValues)
+      .where(eq(milestones.id, updateData.id))
+      .returning();
+      
+    return updatedMilestone;
+  }
+  
+  async deleteMilestone(id: number): Promise<boolean> {
+    const milestone = await this.getMilestone(id);
+    if (!milestone) return false;
+    
+    await db.delete(milestones).where(eq(milestones.id, id));
+    
+    // Create activity for milestone deletion
+    await this.createActivity({
+      projectId: milestone.projectId,
+      type: "milestone",
+      content: `Milestone deleted: ${milestone.title}`
+    });
+    
+    return true;
   }
 }
 

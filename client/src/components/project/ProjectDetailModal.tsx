@@ -288,7 +288,11 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               </div>
               <Progress value={project.progress} className="h-2 mb-4" />
 
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Milestones</h4>
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <a href={`/project/${project.id}`} className="text-primary hover:underline">
+                  View Detailed Timeline
+                </a>
+              </h4>
               <ul className="space-y-3">
                 {getMilestones().map((milestone, index) => (
                   <li key={index} className="flex items-center">
