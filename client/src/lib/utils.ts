@@ -7,6 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 
 // Status colors for different project states
 export const statusColorMap: Record<string, { bg: string; text: string }> = {
+  pending_review: {
+    bg: 'bg-red-100',
+    text: 'text-red-600',
+  },
   awaiting_dp: {
     bg: 'bg-yellow-100',
     text: 'text-yellow-600',

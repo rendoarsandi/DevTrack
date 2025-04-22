@@ -194,6 +194,7 @@ export default function AdminProjectDetail() {
                 <SelectValue placeholder="Change Status" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="pending_review">Pending Review</SelectItem>
                 <SelectItem value="awaiting_dp">Awaiting Down Payment</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
@@ -295,23 +296,123 @@ export default function AdminProjectDetail() {
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
-                  {project.attachments.map((attachment, index) => (
-                    <a 
-                      key={index}
-                      href={`/api/files/${attachment}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
-                    >
-                      <File className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">{attachment}</span>
-                    </a>
-                  ))}
+                  {project.attachments.map((attachment, index) => {
+                    // Handle different attachment formats (string or object)
+                    const attachmentName = typeof attachment === 'string' 
+                      ? attachment 
+                      : attachment.name || 'file';
+                    
+                    return (
+                      <a 
+                        key={index}
+                        href={`/api/files/${attachmentName}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
+                      >
+                        <File className="h-4 w-4 mr-2" />
+                        <span className="text-sm font-medium">{attachmentName}</span>
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
+        
+        {/* Admin Feedback Form - Only shown for pending review projects */}
+        {project.status === "pending_review" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Project Request</CardTitle>
+              <p className="text-muted-foreground">
+                Provide feedback to the client and approve this project request or request changes
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const feedback = (form.elements.namedItem('feedback') as HTMLTextAreaElement).value;
+                const adminFeedback = feedback.trim();
+                
+                if (!adminFeedback) {
+                  toast({
+                    title: "Error",
+                    description: "Please provide feedback before changing status",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                
+                // Get selected status from form
+                const status = (form.elements.namedItem('status') as HTMLSelectElement).value;
+                
+                // Update project with feedback and status
+                updateProjectMutation.mutate({
+                  status,
+                  adminFeedback,
+                });
+              }}>
+                <div className="space-y-2">
+                  <Label htmlFor="feedback">Feedback to Client</Label>
+                  <Textarea 
+                    id="feedback" 
+                    placeholder="Provide feedback about the project request..."
+                    rows={4}
+                    defaultValue={project.adminFeedback || ""}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Decision</Label>
+                  <Select name="status" defaultValue="pending_review">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select decision" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending_review">Keep in Review</SelectItem>
+                      <SelectItem value="awaiting_dp">Approve & Request Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end gap-2">
+                  <Button type="reset" variant="outline">
+                    Reset
+                  </Button>
+                  <Button type="submit" disabled={updateProjectMutation.isPending}>
+                    {updateProjectMutation.isPending && (
+                      <span className="mr-2">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                    )}
+                    Submit Feedback
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Show Admin Feedback when available and not in pending review */}
+        {project.adminFeedback && project.status !== "pending_review" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Feedback</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border rounded-md bg-secondary/30">
+                <p className="whitespace-pre-wrap">{project.adminFeedback}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <Tabs defaultValue="activity">
           <TabsList className="mb-4">
