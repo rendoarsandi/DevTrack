@@ -175,6 +175,89 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
   };
 
+  // New function to handle project acceptance
+  const handleAcceptProject = async () => {
+    try {
+      // Prepare a comment message
+      const comment = feedbackContent.trim() 
+        ? feedbackContent
+        : "Project accepted. Thank you for your excellent work!";
+        
+      // First, submit feedback
+      await submitFeedbackMutation.mutateAsync(comment);
+      
+      // Then update the project status
+      await apiRequest("PATCH", `/api/projects/${projectId}`, {
+        status: "approved",
+        progress: 90
+      });
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      
+      // Show success message
+      toast({
+        title: "Project accepted!",
+        description: "The project has been accepted. Please make the final payment to receive project documents/code."
+      });
+      
+      // Close the modal
+      onClose();
+    } catch (error) {
+      console.error("Error accepting project:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred while accepting the project",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // New function to handle project change requests
+  const handleRequestChanges = async () => {
+    // Validate feedback content
+    if (!feedbackContent.trim()) {
+      toast({
+        title: "Comment required",
+        description: "Please provide a reason for requesting changes",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // First, submit feedback
+      await submitFeedbackMutation.mutateAsync(feedbackContent);
+      
+      // Then update the project status
+      await apiRequest("PATCH", `/api/projects/${projectId}`, {
+        status: "in_progress",
+        progress: Math.max(30, project ? project.progress - 10 : 30)
+      });
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+      
+      // Show success message
+      toast({
+        title: "Changes requested",
+        description: "The development team will revise the project based on your feedback"
+      });
+      
+      // Close the modal
+      onClose();
+    } catch (error) {
+      console.error("Error requesting changes:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred while requesting changes",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoadingProject) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -419,85 +502,69 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           <TabsContent value="development" className="space-y-4 mt-0">
             <div>
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">GitHub Activity</h4>
-              <div className="border border-border rounded-lg">
-                <div className="p-3 border-b border-border bg-muted flex items-center justify-between">
-                  <span className="text-sm font-medium">{project.title.toLowerCase().replace(/\s+/g, '-')}</span>
-                  <a href="#" className="text-xs text-primary">View on GitHub</a>
-                </div>
-                <div className="p-3 text-sm font-mono">
-                  {isLoadingActivities ? (
-                    <div className="flex justify-center p-4">
-                      <Loader2Icon className="h-5 w-5 animate-spin text-muted" />
-                    </div>
-                  ) : activities && activities.filter(a => a.type === "commit").length > 0 ? (
-                    activities
-                      .filter(a => a.type === "commit")
-                      .slice(0, 3)
-                      .map((activity, index) => (
-                        <div key={index} className="flex items-start mb-2">
-                          <div className="flex-shrink-0 text-green-600 mt-1 mr-2">
-                            <GitPullRequest size={16} />
-                          </div>
-                          <div>
-                            <p className="text-xs">{activity.content}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground p-2">No commit activity yet.</p>
-                  )}
-                </div>
+              <div className="border border-border rounded-md p-4 text-center">
+                <p className="text-sm text-muted-foreground">GitHub integration coming soon</p>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="payments" className="space-y-4 mt-0">
-            <div className="rounded-lg border border-border overflow-hidden">
-              <div className="bg-muted px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-medium">Payment Details</h3>
-              </div>
-              <div className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Total Quote</p>
-                    <p className="text-lg font-bold">${project.quote.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Payment Schedule</p>
-                    <ul className="mt-1 space-y-1">
-                      <li className="text-sm flex justify-between">
-                        <span>Deposit (50%)</span>
-                        <span>${(project.quote * 0.5).toLocaleString()}</span>
-                      </li>
-                      <li className="text-sm flex justify-between">
-                        <span>Final Payment (50%)</span>
-                        <span>${(project.quote * 0.5).toLocaleString()}</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm font-medium mb-2">Current Status</p>
-                  <div className="flex items-center">
-                    <div className="w-full bg-muted rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-secondary h-2 rounded-full" 
-                        style={{ width: `${project.paymentStatus}%` }}
-                      ></div>
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Payment Summary</CardTitle>
+                  <CardDescription>Payment status for your project</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Quote</h4>
+                        <p className="mt-1 text-lg font-bold">${project.quote.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Paid Amount</h4>
+                        <p className="mt-1 text-lg font-bold">${(project.quote * project.paymentStatus / 100).toLocaleString()}</p>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium">{project.paymentStatus}%</span>
-                  </div>
-                  
-                  <div className="mt-4">
-                    {project.paymentStatus === 0 && project.status === "awaiting_dp" && (
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Down Payment (50%)</span>
+                        <span className="text-sm">
+                          {project.paymentStatus >= 50 ? (
+                            <span className="text-secondary flex items-center gap-1">
+                              <CheckCircle2 className="h-4 w-4" /> Paid
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Unpaid</span>
+                          )}
+                        </span>
+                      </div>
+                      <Progress value={project.paymentStatus >= 50 ? 100 : 0} className="h-2" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Final Payment (50%)</span>
+                        <span className="text-sm">
+                          {project.paymentStatus >= 100 ? (
+                            <span className="text-secondary flex items-center gap-1">
+                              <CheckCircle2 className="h-4 w-4" /> Paid
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Unpaid</span>
+                          )}
+                        </span>
+                      </div>
+                      <Progress value={project.paymentStatus >= 100 ? 100 : 0} className="h-2" />
+                    </div>
+                    
+                    {project.status === "awaiting_dp" && project.paymentStatus === 0 && (
                       <Button
                         onClick={handlePayDeposit}
                         disabled={updatePaymentStatusMutation.isPending}
-                        className="w-full bg-secondary hover:bg-secondary/90"
+                        className="w-full"
                       >
                         {updatePaymentStatusMutation.isPending ? (
                           <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -519,48 +586,54 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                         {updatePaymentStatusMutation.isPending ? (
                           <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
-                        Complete Payment
+                        Pay Final Payment (${(project.quote * 0.5).toLocaleString()})
                       </Button>
                     )}
-                    {project.paymentStatus === 100 && (
-                      <div className="text-sm text-secondary text-center font-medium">
-                        Payment Complete
-                      </div>
+                    {project.paymentStatus === 50 && project.status === "approved" && (
+                      <Button
+                        onClick={handlePayFull}
+                        disabled={updatePaymentStatusMutation.isPending}
+                        className="w-full"
+                      >
+                        {updatePaymentStatusMutation.isPending ? (
+                          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Pay Final Payment (${(project.quote * 0.5).toLocaleString()})
+                      </Button>
                     )}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-4 mt-0">
             <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Send Message to Developer Team</h4>
-                <Textarea 
-                  placeholder="Ask questions or provide feedback about your project..." 
-                  className="resize-none"
-                  value={feedbackContent}
-                  onChange={(e) => setFeedbackContent(e.target.value)}
-                  rows={4}
-                />
-                <Button 
-                  className="mt-2"
-                  onClick={handleSubmitFeedback}
-                  disabled={submitFeedbackMutation.isPending}
-                >
-                  {submitFeedbackMutation.isPending ? (
-                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Send Message
-                </Button>
-              </div>
+              <Textarea 
+                placeholder="Type your message here..."
+                className="min-h-[100px]"
+                value={feedbackContent}
+                onChange={(e) => setFeedbackContent(e.target.value)}
+              />
+              <Button 
+                onClick={handleSubmitFeedback}
+                disabled={submitFeedbackMutation.isPending}
+                className="w-full"
+              >
+                {submitFeedbackMutation.isPending ? (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Send Message
+              </Button>
 
-              <div>
-                <h4 className="text-sm font-medium mb-2">Message History</h4>
+              <div className="mt-4">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                  Messages History
+                </h4>
                 {isLoadingFeedbacks ? (
-                  <div className="flex justify-center p-4">
-                    <Loader2Icon className="h-5 w-5 animate-spin text-muted" />
+                  <div className="text-center py-8">
+                    <Loader2Icon className="h-8 w-8 animate-spin mx-auto text-muted" />
+                    <p className="mt-2 text-sm text-muted-foreground">Loading messages...</p>
                   </div>
                 ) : feedbacks && feedbacks.length > 0 ? (
                   <ul className="space-y-3 mt-2">
@@ -583,17 +656,17 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           {project.status === "under_review" && (
             <TabsContent value="review" className="space-y-4 mt-0">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mb-4">
-                <h3 className="text-lg font-medium text-amber-800 mb-2">Evaluasi Proyek Anda</h3>
+                <h3 className="text-lg font-medium text-amber-800 mb-2">Evaluate Your Project</h3>
                 <p className="text-amber-700 mb-4">
-                  Proyek Anda telah selesai dan siap untuk dievaluasi. Mohon berikan keputusan apakah proyek ini diterima atau perlu perbaikan.
+                  Your project is complete and ready for evaluation. Please provide your decision on whether to accept the project or request changes.
                 </p>
               </div>
               
               <div className="p-4 border rounded-lg space-y-6">
                 <div>
-                  <h3 className="font-semibold mb-2">Evaluasi Keseluruhan</h3>
+                  <h3 className="font-semibold mb-2">Overall Evaluation</h3>
                   <Textarea 
-                    placeholder="Berikan komentar Anda tentang proyek ini..." 
+                    placeholder="Provide your comments about this project..." 
                     className="min-h-[100px]"
                     value={feedbackContent}
                     onChange={(e) => setFeedbackContent(e.target.value)}
@@ -601,9 +674,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="font-semibold">Upload Media (Opsional)</h3>
+                  <h3 className="font-semibold">Upload Media (Optional)</h3>
                   <p className="text-sm text-muted-foreground">
-                    Unggah screenshot atau file lain sebagai bukti testing
+                    Upload screenshots or other files as testing evidence
                   </p>
                   <div className="border border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
                     <input type="file" className="hidden" id="file-upload" />
@@ -612,10 +685,10 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                         <Loader2Icon className="h-6 w-6 mx-auto text-muted-foreground" />
                       </span>
                       <span className="text-sm font-medium">
-                        Klik untuk memilih file
+                        Click to select files
                       </span>
                       <span className="text-xs text-muted-foreground block mt-1">
-                        Mendukung JPG, PNG, PDF hingga 5MB
+                        Supports JPG, PNG, PDF up to 5MB
                       </span>
                     </label>
                   </div>
@@ -625,71 +698,13 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   <Button 
                     variant="outline" 
                     className="border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      // Aksi untuk menolak proyek
-                      if (!feedbackContent.trim()) {
-                        toast({
-                          title: "Komentar diperlukan",
-                          description: "Mohon berikan alasan penolakan proyek",
-                          variant: "destructive"
-                        });
-                        return;
-                      }
-                      
-                      // Submit feedback dan update status
-                      submitFeedbackMutation.mutate(feedbackContent);
-                      apiRequest("PATCH", `/api/projects/${projectId}`, {
-                        status: "in_progress",
-                        progress: Math.max(30, project.progress - 10)
-                      }).then(() => {
-                        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
-                        queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
-                        toast({
-                          title: "Proyek perlu perbaikan",
-                          description: "Developer akan memperbaiki proyek berdasarkan feedback Anda"
-                        });
-                        onClose();
-                      });
-                    }}
+                    onClick={handleRequestChanges}
                   >
                     Request Changes
                   </Button>
                   <Button 
                     className="bg-secondary hover:bg-secondary/90"
-                    onClick={async () => {
-                      // Aksi untuk menerima proyek
-                      const comment = feedbackContent.trim() 
-                        ? feedbackContent
-                        : "Proyek diterima. Terima kasih atas kerja yang baik!";
-                      
-                      try {
-                        // Kirim feedback terlebih dahulu
-                        await submitFeedbackMutation.mutateAsync(comment);
-                        
-                        // Kemudian update status project
-                        await apiRequest("PATCH", `/api/projects/${projectId}`, {
-                          status: "approved",
-                          progress: 90
-                        });
-                        
-                        // Refresh data
-                        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
-                        queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
-                        
-                        toast({
-                          title: "Proyek diterima!",
-                          description: "Proyek telah diterima. Silahkan lakukan pembayaran akhir untuk mendapatkan dokumen/kode proyek."
-                        });
-                        onClose();
-                      } catch (error) {
-                        console.error("Error accepting project:", error);
-                        toast({
-                          title: "Error",
-                          description: error instanceof Error ? error.message : "Terjadi kesalahan saat menerima proyek",
-                          variant: "destructive"
-                        });
-                      }
-                    }
+                    onClick={handleAcceptProject}
                   >
                     Accept Project
                   </Button>
@@ -707,9 +722,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium text-green-800 mb-2">Proyek Selesai</h3>
+                    <h3 className="text-lg font-medium text-green-800 mb-2">Project Completed</h3>
                     <p className="text-green-700 mb-2">
-                      Selamat! Proyek Anda telah selesai dan semua dokumen serta kode telah dikirimkan.
+                      Congratulations! Your project is complete and all documents and code have been delivered.
                     </p>
                   </div>
                 </div>
@@ -720,7 +735,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-muted px-4 py-3 border-b border-border flex items-center">
                     <FileIcon className="h-4 w-4 mr-2 text-primary" />
-                    <h3 className="text-sm font-medium">Dokumentasi & Kode</h3>
+                    <h3 className="text-sm font-medium">Documentation & Code</h3>
                   </div>
                   
                   <div className="p-4 space-y-4">
@@ -737,7 +752,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                         </div>
                         
                         <div className="space-y-2">
-                          <h4 className="text-sm font-medium">Dokumen & File</h4>
+                          <h4 className="text-sm font-medium">Documents & Files</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {/* Repository */}
                             <a 
@@ -750,7 +765,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                 <GitPullRequest className="h-4 w-4" />
                               </div>
                               <div>
-                                <p className="text-sm font-medium">Repository Kode</p>
+                                <p className="text-sm font-medium">Code Repository</p>
                                 <p className="text-xs text-muted-foreground">GitHub Repository</p>
                               </div>
                             </a>
@@ -766,7 +781,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                 <FileIcon className="h-4 w-4" />
                               </div>
                               <div>
-                                <p className="text-sm font-medium">Dokumentasi Teknis</p>
+                                <p className="text-sm font-medium">Technical Documentation</p>
                                 <p className="text-xs text-muted-foreground">PDF Documentation</p>
                               </div>
                             </a>
@@ -782,7 +797,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                 <FileIcon className="h-4 w-4" />
                               </div>
                               <div>
-                                <p className="text-sm font-medium">Manual Pengguna</p>
+                                <p className="text-sm font-medium">User Manual</p>
                                 <p className="text-xs text-muted-foreground">PDF User Guide</p>
                               </div>
                             </a>
@@ -808,8 +823,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <FileIcon className="h-12 w-12 mx-auto mb-3 text-muted" />
-                        <p>Tidak ada dokumen handover yang ditemukan.</p>
-                        <p className="text-sm">Silahkan hubungi tim developer untuk informasi lebih lanjut.</p>
+                        <p>No handover documents found.</p>
+                        <p className="text-sm">Please contact the development team for more information.</p>
                       </div>
                     )}
                   </div>
@@ -817,19 +832,19 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-muted px-4 py-3 border-b border-border">
-                    <h3 className="text-sm font-medium">Support & Bantuan</h3>
+                    <h3 className="text-sm font-medium">Support & Help</h3>
                   </div>
                   <div className="p-4">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Jika Anda membutuhkan bantuan tambahan atau memiliki pertanyaan tentang proyek yang telah diselesaikan, 
-                      silahkan hubungi kami melalui form pesan di tab Messages.
+                      If you need additional assistance or have questions about the completed project, 
+                      please contact us through the message form in the Messages tab.
                     </p>
                     <Button
                       onClick={() => setActiveTab("feedback")}
                       className="w-full"
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
-                      Kirim Pesan Support
+                      Send Support Message
                     </Button>
                   </div>
                 </div>
