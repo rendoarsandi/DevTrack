@@ -49,6 +49,14 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
   
   const [activeTab, setActiveTab] = useState(initialTab);
   const [feedbackContent, setFeedbackContent] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{
+    name: string;
+    filename: string;
+    type: string;
+    size: number;
+    url: string;
+  }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const { data: project, isLoading: isLoadingProject } = useQuery<Project>({
@@ -165,9 +173,94 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
   };
 
+  // Handle file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    
+    try {
+      const formData = new FormData();
+      
+      // Append all selected files
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+      
+      // Send files to the server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type here, it will be set automatically with boundary
+      });
+      
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to upload files');
+      }
+      
+      // Get uploaded file data
+      const uploadedData = await response.json();
+      setUploadedFiles(prev => [...prev, ...uploadedData]);
+      
+      // Success message
+      toast({
+        title: "Files uploaded",
+        description: `${uploadedData.length} file(s) uploaded successfully.`
+      });
+      
+      // Reset file input
+      event.target.value = '';
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload files",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Remove uploaded file
+  const handleRemoveFile = (fileUrl: string) => {
+    const filename = fileUrl.split('/').pop();
+    if (!filename) return;
+    
+    // Remove from state immediately for responsive UI
+    setUploadedFiles(prev => prev.filter(file => file.url !== fileUrl));
+    
+    // Send delete request to server
+    fetch(`/api/files/${filename}`, {
+      method: 'DELETE'
+    }).catch(err => {
+      console.error('Error deleting file:', err);
+      toast({
+        title: "Error removing file",
+        description: "The file could not be removed from the server.",
+        variant: "destructive"
+      });
+    });
+  };
+
   const handleSubmitFeedback = () => {
     if (feedbackContent.trim()) {
-      submitFeedbackMutation.mutate(feedbackContent);
+      // Add attachments info if any
+      let content = feedbackContent;
+      
+      if (uploadedFiles.length > 0) {
+        const attachmentsList = uploadedFiles.map(file => 
+          `[Attachment: ${file.name}](${file.url})`
+        ).join('\n');
+        
+        content = `${content}\n\n${attachmentsList}`;
+      }
+      
+      submitFeedbackMutation.mutate(content);
+      // Clear uploaded files after sending
+      setUploadedFiles([]);
     } else {
       toast({
         title: "Message required",
@@ -693,19 +786,56 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                     Upload screenshots or other files as testing evidence
                   </p>
                   <div className="border border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
-                    <input type="file" className="hidden" id="file-upload" />
-                    <label htmlFor="file-upload" className="cursor-pointer block">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      id="file-upload-review" 
+                      multiple
+                      onChange={handleFileUpload}
+                      accept="image/*,application/pdf"
+                    />
+                    <label htmlFor="file-upload-review" className="cursor-pointer block">
                       <span className="block mb-1">
-                        <Loader2Icon className="h-6 w-6 mx-auto text-muted-foreground" />
+                        {isUploading ? (
+                          <Loader2Icon className="h-6 w-6 mx-auto text-muted-foreground animate-spin" />
+                        ) : (
+                          <FileIcon className="h-6 w-6 mx-auto text-muted-foreground" />
+                        )}
                       </span>
                       <span className="text-sm font-medium">
-                        Click to select files
+                        {isUploading ? "Uploading..." : "Click to select files"}
                       </span>
                       <span className="text-xs text-muted-foreground block mt-1">
                         Supports JPG, PNG, PDF up to 5MB
                       </span>
                     </label>
                   </div>
+                  
+                  {/* Display uploaded files */}
+                  {uploadedFiles.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Uploaded Files:</h4>
+                      <ul className="space-y-2">
+                        {uploadedFiles.map((file, index) => (
+                          <li key={index} className="flex items-center justify-between bg-muted/50 rounded-md p-2">
+                            <div className="flex items-center">
+                              <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                              <span className="text-sm truncate max-w-[180px]">{file.name}</span>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveFile(file.url)}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Remove file"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
