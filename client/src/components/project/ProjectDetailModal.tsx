@@ -161,6 +161,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Loading Project...</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center p-6">
             <Loader2Icon className="h-10 w-10 animate-spin text-muted" />
           </div>
