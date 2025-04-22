@@ -89,7 +89,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           className="text-accent font-medium"
           asChild
         >
-          <Link href={`/projects/${project.id}`}>Submit Feedback</Link>
+          <Link href={`/projects/${project.id}`}>Berikan Review</Link>
         </Button>
       );
     } else if (project.status === "completed") {
