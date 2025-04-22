@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface LiveChatProps {
   projectId: number;
+  isAdmin?: boolean;
 }
 
 interface ChatMessage {
@@ -21,7 +22,7 @@ interface ChatMessage {
   projectId?: number;
 }
 
-export function LiveChat({ projectId }: LiveChatProps) {
+export function LiveChat({ projectId, isAdmin = false }: LiveChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [wsConnected, setWsConnected] = useState(false);
@@ -136,12 +137,14 @@ export function LiveChat({ projectId }: LiveChatProps) {
   return (
     <div className="flex flex-col h-[400px] border rounded-md overflow-hidden">
       <div className="bg-muted border-b border-border px-4 py-2">
-        <h3 className="text-sm font-medium">Live Chat</h3>
+        <h3 className="text-sm font-medium">
+          {isAdmin ? "Admin Chat Support" : "Live Chat"}
+        </h3>
         <p className="text-xs text-muted-foreground">
           {wsConnected ? (
             <>
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-              Connected
+              Connected {isAdmin && "as Admin"}
             </>
           ) : (
             <>
