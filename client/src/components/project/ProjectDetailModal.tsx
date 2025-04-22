@@ -18,6 +18,7 @@ import {
   FileIcon,
   MessageSquare,
   AlertCircle,
+  MessagesSquare,
   CheckCircle
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -27,6 +28,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LiveChat } from "./LiveChat";
 
 interface ProjectDetailModalProps {
   projectId: number;
@@ -207,7 +209,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       console.log("Files uploaded successfully:", uploadedData);
       
       // Buat URL absolut untuk setiap file
-      const absoluteUrlData = uploadedData.map(file => {
+      const absoluteUrlData = uploadedData.map((file: { url: string; name: string; type: string; size: number }) => {
         // Pastikan URL dimulai dengan / jika belum
         const url = file.url.startsWith('/') ? file.url : `/${file.url}`;
         return {
@@ -608,6 +610,13 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
             >
               Messages
             </TabsTrigger>
+            <TabsTrigger 
+              value="chat" 
+              className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
+            >
+              <MessagesSquare className="mr-2 h-4 w-4" />
+              Live Chat
+            </TabsTrigger>
             {project.status === "under_review" && (
               <TabsTrigger 
                 value="review" 
@@ -794,6 +803,10 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="chat" className="mt-0">
+            <LiveChat projectId={projectId} />
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-4 mt-0">
