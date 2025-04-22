@@ -3,6 +3,11 @@ import path from 'path';
 import multer from 'multer';
 import { Express, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
+import { fileURLToPath } from 'url';
+
+// Get the directory path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -48,30 +53,47 @@ const upload = multer({
 // Setup file upload routes
 export function setupFileUpload(app: Express) {
   // Endpoint to upload multiple files
-  app.post('/api/upload', upload.array('files', 5), (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    try {
-      const files = req.files as Express.Multer.File[];
-      
-      if (!files || files.length === 0) {
-        return res.status(400).json({ message: 'No files uploaded' });
-      }
-      
-      // Create response with file information
-      const fileData = files.map(file => ({
-        name: file.originalname,
-        filename: file.filename,
-        type: file.mimetype,
-        size: file.size,
-        url: `/api/files/${file.filename}`,
-      }));
-      
-      return res.status(201).json(fileData);
-    } catch (error) {
-      console.error('File upload error:', error);
-      return res.status(500).json({ message: 'File upload failed', error: error instanceof Error ? error.message : 'Unknown error' });
+  app.post('/api/upload', (req: Request, res: Response) => {
+    // First check authentication before processing the upload
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Unauthorized. Please log in to upload files.' });
     }
+    
+    // Handle the file upload with error catching
+    upload.array('files', 5)(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({ 
+          message: 'File upload error', 
+          error: err.message 
+        });
+      }
+
+      try {
+        const files = req.files as Express.Multer.File[];
+        
+        if (!files || files.length === 0) {
+          return res.status(400).json({ message: 'No files uploaded' });
+        }
+        
+        // Create response with file information
+        const fileData = files.map(file => ({
+          name: file.originalname,
+          filename: file.filename,
+          type: file.mimetype,
+          size: file.size,
+          url: `/api/files/${file.filename}`,
+        }));
+        
+        return res.status(201).json(fileData);
+      } catch (error) {
+        console.error('File upload error:', error);
+        return res.status(500).json({ 
+          message: 'File upload failed', 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    });
   });
   
   // Endpoint to serve uploaded files

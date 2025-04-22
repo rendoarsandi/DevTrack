@@ -72,17 +72,32 @@ export default function ProjectForm() {
       const formData = new FormData();
       files.forEach(file => formData.append('files', file));
       
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to upload files');
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+          // Make sure we include the session credentials
+          credentials: 'include',
+        });
+        
+        if (!res.ok) {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const error = await res.json();
+            throw new Error(error.message || 'Failed to upload files');
+          } else {
+            // Handle non-JSON error responses
+            const text = await res.text();
+            console.error('Error response:', text);
+            throw new Error(`Failed to upload files: ${res.status} ${res.statusText}`);
+          }
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error('File upload error:', error);
+        throw error;
       }
-      
-      return res.json();
     },
   });
 
