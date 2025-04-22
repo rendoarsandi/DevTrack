@@ -161,7 +161,7 @@ export default function ProjectDetail() {
                                 }}
                                 className="bg-amber-600 hover:bg-amber-700 text-white"
                               >
-                                Berikan Review Sekarang &rarr;
+                                Submit Review Now &rarr;
                               </Button>
                             </div>
                           </div>

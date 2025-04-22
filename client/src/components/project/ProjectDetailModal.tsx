@@ -652,7 +652,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       });
                     }}
                   >
-                    Perlu Perbaikan
+                    Request Changes
                   </Button>
                   <Button 
                     className="bg-secondary hover:bg-secondary/90"
@@ -677,7 +677,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       });
                     }}
                   >
-                    Terima Proyek
+                    Accept Project
                   </Button>
                 </div>
               </div>
