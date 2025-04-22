@@ -496,7 +496,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const project = await storage.getProject(projectId);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Allow access to both the client who owns the project AND any admin user
+    if (project.clientId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
     
     const activities = await storage.getActivitiesByProject(projectId);
     return res.json(activities);
@@ -511,7 +515,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const project = await storage.getProject(projectId);
     if (!project) return res.status(404).json({ message: "Project not found" });
-    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    // Allow access to both the client who owns the project AND any admin user
+    if (project.clientId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
     
     const milestones = await storage.getMilestonesByProject(projectId);
     return res.json(milestones);
