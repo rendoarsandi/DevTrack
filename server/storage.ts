@@ -1,8 +1,13 @@
 import { users, projects, feedback, activities } from "@shared/schema";
 import type { User, InsertUser, Project, InsertProject, Feedback, InsertFeedback, Activity, InsertActivity, UpdateProject } from "@shared/schema";
 import session from "express-session";
+import { db } from "./db";
+import { eq, desc, inArray } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 import createMemoryStore from "memorystore";
 
+const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
 
 // modify the interface with any CRUD methods
@@ -33,80 +38,63 @@ export interface IStorage {
   sessionStore: session.SessionStore;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
-  private feedbacks: Map<number, Feedback>;
-  private activities: Map<number, Activity>;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
-  currentUserId: number;
-  currentProjectId: number;
-  currentFeedbackId: number;
-  currentActivityId: number;
 
   constructor() {
-    this.users = new Map();
-    this.projects = new Map();
-    this.feedbacks = new Map();
-    this.activities = new Map();
-    this.currentUserId = 1;
-    this.currentProjectId = 1;
-    this.currentFeedbackId = 1;
-    this.currentActivityId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
+    this.sessionStore = new PostgresSessionStore({ 
+      pool,
+      createTableIfMissing: true 
     });
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   // Project methods
   async getProjects(): Promise<Project[]> {
-    return Array.from(this.projects.values());
+    return await db.select().from(projects);
   }
 
   async getProjectsByClient(clientId: number): Promise<Project[]> {
-    return Array.from(this.projects.values()).filter(
-      (project) => project.clientId === clientId,
-    );
+    return await db.select().from(projects).where(eq(projects.clientId, clientId));
   }
 
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projects.get(id);
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
-    const id = this.currentProjectId++;
-    const now = new Date();
-    const project: Project = { 
-      ...insertProject, 
-      id, 
-      status: "awaiting_dp", 
-      paymentStatus: 0, 
-      progress: 0, 
-      createdAt: now 
-    };
-    this.projects.set(id, project);
+    const [project] = await db
+      .insert(projects)
+      .values({
+        ...insertProject,
+        status: "awaiting_dp",
+        paymentStatus: 0,
+        progress: 0,
+      })
+      .returning();
     
     // Create an activity for the new project
     await this.createActivity({
-      projectId: id,
+      projectId: project.id,
       type: "quotation",
       content: `Quotation sent for ${insertProject.title}`
     });
@@ -115,17 +103,17 @@ export class MemStorage implements IStorage {
   }
 
   async updateProject(updateData: UpdateProject): Promise<Project | undefined> {
-    const project = this.projects.get(updateData.id);
+    const project = await this.getProject(updateData.id);
     if (!project) return undefined;
     
-    const updatedProject = { ...project };
+    const updateValues: Partial<Project> = {};
     
     if (updateData.status !== undefined) {
-      updatedProject.status = updateData.status;
+      updateValues.status = updateData.status;
     }
     
     if (updateData.paymentStatus !== undefined) {
-      updatedProject.paymentStatus = updateData.paymentStatus;
+      updateValues.paymentStatus = updateData.paymentStatus;
       
       // Create a payment activity if payment status changed
       if (project.paymentStatus !== updateData.paymentStatus) {
@@ -138,25 +126,28 @@ export class MemStorage implements IStorage {
     }
     
     if (updateData.progress !== undefined) {
-      updatedProject.progress = updateData.progress;
+      updateValues.progress = updateData.progress;
     }
     
-    this.projects.set(updatedProject.id, updatedProject);
+    const [updatedProject] = await db
+      .update(projects)
+      .set(updateValues)
+      .where(eq(projects.id, updateData.id))
+      .returning();
+      
     return updatedProject;
   }
 
   // Feedback methods
   async getFeedbackByProject(projectId: number): Promise<Feedback[]> {
-    return Array.from(this.feedbacks.values()).filter(
-      (feedback) => feedback.projectId === projectId,
-    );
+    return await db.select().from(feedback).where(eq(feedback.projectId, projectId));
   }
 
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
-    const id = this.currentFeedbackId++;
-    const now = new Date();
-    const feedback: Feedback = { ...insertFeedback, id, createdAt: now };
-    this.feedbacks.set(id, feedback);
+    const [newFeedback] = await db
+      .insert(feedback)
+      .values(insertFeedback)
+      .returning();
     
     // Create activity for the feedback
     await this.createActivity({
@@ -165,7 +156,7 @@ export class MemStorage implements IStorage {
       content: insertFeedback.content
     });
     
-    return feedback;
+    return newFeedback;
   }
 
   // Activity methods
@@ -174,25 +165,32 @@ export class MemStorage implements IStorage {
     const clientProjects = await this.getProjectsByClient(clientId);
     const projectIds = clientProjects.map(project => project.id);
     
-    // Get activities for those projects
-    return Array.from(this.activities.values())
-      .filter(activity => projectIds.includes(activity.projectId))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    if (projectIds.length === 0) return [];
+    
+    // Using inArray with drizzle
+    return await db
+      .select()
+      .from(activities)
+      .where(inArray(activities.projectId, projectIds))
+      .orderBy(desc(activities.createdAt));
   }
 
   async getActivitiesByProject(projectId: number): Promise<Activity[]> {
-    return Array.from(this.activities.values())
-      .filter(activity => activity.projectId === projectId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return await db
+      .select()
+      .from(activities)
+      .where(eq(activities.projectId, projectId))
+      .orderBy(activities.createdAt);
   }
 
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const id = this.currentActivityId++;
-    const now = new Date();
-    const activity: Activity = { ...insertActivity, id, createdAt: now };
-    this.activities.set(id, activity);
+    const [activity] = await db
+      .insert(activities)
+      .values(insertActivity)
+      .returning();
+    
     return activity;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
