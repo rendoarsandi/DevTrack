@@ -1,10 +1,11 @@
-import { users, projects, feedback, activities, milestones } from "@shared/schema";
+import { users, projects, feedback, activities, milestones, notifications } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Project, InsertProject, UpdateProject,
   Feedback, InsertFeedback, 
   Activity, InsertActivity,
-  Milestone, InsertMilestone, UpdateMilestone
+  Milestone, InsertMilestone, UpdateMilestone,
+  Notification, InsertNotification, UpdateNotification
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
@@ -46,6 +47,13 @@ export interface IStorage {
   createMilestone(milestone: InsertMilestone): Promise<Milestone>;
   updateMilestone(milestone: UpdateMilestone): Promise<Milestone | undefined>;
   deleteMilestone(id: number): Promise<boolean>;
+  
+  // Notification methods
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  updateNotification(notification: UpdateNotification): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
   
   // Session store
   sessionStore: any;
@@ -344,6 +352,56 @@ export class DatabaseStorage implements IStorage {
     });
     
     return true;
+  }
+  
+  // Notification methods
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+  
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    const result = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ));
+    
+    return result[0]?.count || 0;
+  }
+  
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
+    
+    return notification;
+  }
+  
+  async updateNotification(updateData: UpdateNotification): Promise<Notification | undefined> {
+    const [notification] = await db
+      .update(notifications)
+      .set({ isRead: updateData.isRead })
+      .where(eq(notifications.id, updateData.id))
+      .returning();
+    
+    return notification;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false)
+      ));
   }
 }
 

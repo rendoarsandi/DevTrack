@@ -67,6 +67,30 @@ export const milestones = pgTable("milestones", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Enum untuk tipe notifikasi
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "status_update",     // Pemberitahuan perubahan status project
+  "new_message",       // Ada pesan baru di LiveChat
+  "new_feedback",      // Ada feedback baru dari client/admin
+  "new_milestone",     // Milestone baru ditambahkan
+  "milestone_update",  // Milestone diupdate
+  "payment_update",    // Update pembayaran project
+  "admin_action"       // Tindakan admin lainnya
+]);
+
+// Tabel untuk notifikasi
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  projectId: integer("project_id").references(() => projects.id),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: jsonb("metadata") // Untuk menyimpan data terkait notifikasi seperti ID feedback, milestone, dll
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -143,17 +167,35 @@ export const updateMilestoneSchema = z.object({
   order: z.number().optional(),
 });
 
+// Notification schema
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  type: true,
+  title: true,
+  message: true,
+  projectId: true,
+  metadata: true,
+});
+
+export const updateNotificationSchema = z.object({
+  id: z.number(),
+  isRead: z.boolean().optional(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UpdateProject = z.infer<typeof updateProjectSchema>;
 export type UpdateMilestone = z.infer<typeof updateMilestoneSchema>;
+export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Milestone = typeof milestones.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
