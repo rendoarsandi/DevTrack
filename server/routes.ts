@@ -382,9 +382,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Submit feedback jika ada pesan
       if (message) {
+        // Cek apakah pesan sudah memiliki prefix
+        const hasPrefix = message.startsWith('REVIEW:');
+        
+        // Hanya tambahkan prefix jika belum ada
+        let content = message;
+        if (!hasPrefix) {
+          content = `REVIEW: ${message}`;
+        }
+        
         await storage.createFeedback({
           projectId,
-          content: `REVIEW: ${message}`
+          content: content
         });
       }
       
@@ -443,9 +452,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Submit feedback with a special prefix to mark it as a change request
+      // Cek apakah sudah ada tag JSON attachments
+      const hasAttachments = message.includes('---ATTACHMENTS_DATA---');
+      const hasPrefix = message.startsWith('REQUEST CHANGES:');
+      
+      // Hanya tambahkan prefix jika belum ada
+      let content = message;
+      if (!hasPrefix) {
+        content = `REQUEST CHANGES: ${message}`;
+      }
+      
       await storage.createFeedback({
         projectId,
-        content: `REQUEST CHANGES: ${message}`
+        content: content
       });
       
       // Hitung progress baru
