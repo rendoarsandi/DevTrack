@@ -3,9 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { ProjectDetailModal } from "@/components/project/ProjectDetailModal";
+import { ActivityFeed } from "@/components/project/ActivityFeed";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Project } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProjectProgress } from "@/components/project/ProjectProgress";
 
 export default function ProjectDetail() {
   const params = useParams<{ id: string }>();
@@ -65,12 +68,69 @@ export default function ProjectDetail() {
                 Back to Dashboard
               </Button>
               
-              {/* Used as a placeholder since the actual content is in the modal */}
-              <ProjectDetailModal
-                projectId={projectId}
-                isOpen={true}
-                onClose={() => navigate("/")}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  {/* Main project details modal */}
+                  <ProjectDetailModal
+                    projectId={projectId}
+                    isOpen={true}
+                    onClose={() => navigate("/")}
+                  />
+                  
+                  {/* Project progress visualization */}
+                  <div className="mt-6">
+                    <h2 className="text-lg font-bold mb-4">Project Progress</h2>
+                    {project && <ProjectProgress project={project} />}
+                  </div>
+                </div>
+                
+                <div className="lg:col-span-1">
+                  <Tabs defaultValue="activity" className="w-full">
+                    <TabsList className="mb-4 w-full">
+                      <TabsTrigger value="activity" className="flex-1">Updates</TabsTrigger>
+                      <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="activity">
+                      {/* Integrated Activity Feed for real-time updates */}
+                      <ActivityFeed projectId={projectId} />
+                    </TabsContent>
+                    
+                    <TabsContent value="timeline">
+                      <div className="bg-card rounded-lg border p-4">
+                        <h3 className="font-semibold mb-3">Project Timeline</h3>
+                        <div className="space-y-4">
+                          <div className="border-l-2 border-primary pl-4 pb-8 relative">
+                            <div className="absolute w-3 h-3 rounded-full bg-primary -left-[7px]"></div>
+                            <p className="font-medium">Project Started</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(project.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          
+                          <div className="border-l-2 border-muted pl-4 pb-8 relative">
+                            <div className="absolute w-3 h-3 rounded-full bg-muted -left-[7px]"></div>
+                            <p className="font-medium">Development Phase</p>
+                            <p className="text-sm text-muted-foreground">In progress</p>
+                          </div>
+                          
+                          <div className="border-l-2 border-muted pl-4 relative">
+                            <div className="absolute w-3 h-3 rounded-full bg-muted -left-[7px]"></div>
+                            <p className="font-medium">Estimated Completion</p>
+                            <p className="text-sm text-muted-foreground">
+                              {(() => {
+                                const date = new Date(project.createdAt);
+                                date.setDate(date.getDate() + (project.timeline * 7));
+                                return date.toLocaleDateString();
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
             </div>
           </div>
         </main>

@@ -214,7 +214,7 @@ export default function AdminProjectDetail() {
               variant="outline"
               onClick={() => navigate(`/admin/projects/${id}/edit`)}
             >
-              Update Project
+              Edit Project
             </Button>
           </div>
         </div>
