@@ -343,6 +343,15 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 Review
               </TabsTrigger>
             )}
+            {project.status === "completed" && (
+              <TabsTrigger 
+                value="deliverables" 
+                className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
+              >
+                <File className="mr-2 h-4 w-4" />
+                Deliverables
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-0">
