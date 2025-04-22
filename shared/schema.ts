@@ -18,6 +18,8 @@ export const statusEnum = pgEnum("status", [
   "awaiting_dp",    // Project sudah direview dan menunggu pembayaran DP
   "in_progress",    // Project dalam pengerjaan
   "under_review",   // Project selesai dan menunggu review dari client
+  "approved",       // Project sudah diapprove oleh client tapi belum dilakukan pembayaran akhir
+  "awaiting_handover", // Project menunggu penyerahan dokumen/kode
   "completed",      // Project sudah selesai sepenuhnya
   "rejected"        // Project ditolak oleh client
 ]);
@@ -117,6 +119,8 @@ export const updateProjectSchema = z.object({
     "awaiting_dp", 
     "in_progress", 
     "under_review", 
+    "approved",
+    "awaiting_handover",
     "completed",
     "rejected"
   ]).optional(),

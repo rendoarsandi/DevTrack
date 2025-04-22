@@ -127,16 +127,17 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           description: "Your down payment has been received. The development team will begin work on your project immediately."
         });
       } 
-      // Jika ini adalah full payment (100%), otomatis ubah status ke completed
+      // Jika ini adalah full payment (100%), otomatis ubah status ke awaiting_handover
       else if (data.paymentStatus === 100) {
         // Update status proyek
         apiRequest("PATCH", `/api/projects/${projectId}`, {
-          status: "completed"
+          status: "awaiting_handover",
+          progress: 95
         });
         
         toast({
           title: "Final payment completed",
-          description: "Your project is now completed. All project documentation and deliverables are available."
+          description: "Pembayaran akhir telah diterima. Tim developer akan segera mengirimkan dokumen dan kode proyek Anda."
         });
       }
       else {
@@ -217,15 +218,30 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         textColor = "text-purple-800";
         label = "Under Review";
         break;
+      case "approved":
+        bgColor = "bg-indigo-100";
+        textColor = "text-indigo-800";
+        label = "Approved";
+        break;
+      case "awaiting_handover":
+        bgColor = "bg-orange-100";
+        textColor = "text-orange-800";
+        label = "Awaiting Handover";
+        break;
       case "completed":
         bgColor = "bg-green-100";
         textColor = "text-green-800";
         label = "Completed";
         break;
+      case "rejected":
+        bgColor = "bg-red-100";
+        textColor = "text-red-800";
+        label = "Rejected";
+        break;
       default:
         bgColor = "bg-gray-100";
         textColor = "text-gray-800";
-        label = status;
+        label = status.replace("_", " ").split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
     }
 
     return (
@@ -637,14 +653,14 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       
                       submitFeedbackMutation.mutate(comment);
                       apiRequest("PATCH", `/api/projects/${projectId}`, {
-                        status: "completed",
-                        progress: 100
+                        status: "approved",
+                        progress: 90
                       }).then(() => {
                         queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
                         queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
                         toast({
                           title: "Proyek diterima!",
-                          description: "Proyek telah selesai. Silahkan lakukan pembayaran akhir"
+                          description: "Proyek telah diterima. Silahkan lakukan pembayaran akhir untuk mendapatkan dokumen/kode proyek."
                         });
                         onClose();
                       });
@@ -671,6 +687,20 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               Pay Deposit
             </Button>
           )}
+          
+          {project.status === "approved" && project.paymentStatus === 50 && (
+            <Button
+              className="sm:ml-3 bg-secondary hover:bg-secondary/90"
+              onClick={handlePayFull}
+              disabled={updatePaymentStatusMutation.isPending}
+            >
+              {updatePaymentStatusMutation.isPending ? (
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Pay Final Payment
+            </Button>
+          )}
+          
           {project.status === "under_review" && (
             <Button
               className="sm:ml-3 bg-primary"
@@ -681,7 +711,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               Berikan Review
             </Button>
           )}
-          {(project.status !== "awaiting_dp" && project.status !== "under_review") && (
+          
+          {(project.status !== "awaiting_dp" && project.status !== "under_review" && project.status !== "approved") && (
             <Button
               className="sm:ml-3"
               onClick={() => {
