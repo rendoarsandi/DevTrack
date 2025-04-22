@@ -79,7 +79,52 @@ export default function ProjectDetail() {
               
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                  {/* Main project details modal */}
+                  {/* Main project details */}
+                  <div className="mb-6">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-2xl">{project.title}</CardTitle>
+                        <div className="flex justify-between items-center">
+                          <p className="text-muted-foreground">{project.description}</p>
+                          <div className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            {project.status === "pending_review" ? "Under Review" :
+                             project.status === "awaiting_dp" ? "Awaiting Deposit" :
+                             project.status === "in_progress" ? "In Progress" :
+                             project.status === "under_review" ? "Review Required" :
+                             project.status === "completed" ? "Completed" : "Unknown"}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      {project.status === "under_review" && (
+                        <CardContent className="pb-0">
+                          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 mt-2">
+                            <div className="flex items-center">
+                              <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
+                              <p className="font-medium">Project Review Required</p>
+                            </div>
+                            <p className="ml-7 text-sm mt-0.5">
+                              Please review the project and provide your feedback. You can approve the project, request changes, or reject it.
+                            </p>
+                            <Button 
+                              onClick={() => {
+                                const reviewElement = document.getElementById('review-section');
+                                if (reviewElement) {
+                                  reviewElement.scrollIntoView({ behavior: 'smooth' });
+                                }
+                              }} 
+                              variant="outline"
+                              className="ml-7 mt-2 border-amber-200 bg-amber-100 text-amber-800 hover:bg-amber-200"
+                            >
+                              Go to Review Section
+                            </Button>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  </div>
+                  
+                  {/* Project details modal for deeper details */}
                   <ProjectDetailModal
                     projectId={projectId}
                     isOpen={true}
