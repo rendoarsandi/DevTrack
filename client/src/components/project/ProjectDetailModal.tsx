@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow, format } from "date-fns";
+import { Link, useLocation } from "wouter";
 import { 
   Dialog,
   DialogContent,
@@ -12,7 +13,8 @@ import {
   CheckCircle2, 
   CircleIcon, 
   GitPullRequest,
-  Loader2Icon
+  Loader2 as Loader2Icon,
+  ClipboardCheck
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Project, Activity, Feedback } from "@shared/schema";
@@ -20,6 +22,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ProjectDetailModalProps {
   projectId: number;
@@ -303,6 +306,15 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
             >
               Messages
             </TabsTrigger>
+            {project.status === "under_review" && (
+              <TabsTrigger 
+                value="review" 
+                className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
+              >
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                Review
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-0">
@@ -528,6 +540,55 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               </div>
             </div>
           </TabsContent>
+          
+          {project.status === "under_review" && (
+            <TabsContent value="review" className="space-y-4 mt-0">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mb-4">
+                <h3 className="text-lg font-medium text-amber-800 mb-2">Evaluasi Proyek Anda</h3>
+                <p className="text-amber-700 mb-4">
+                  Proyek Anda telah selesai dan siap untuk dievaluasi. Silakan gunakan form di bawah ini untuk memberikan review Anda.
+                </p>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <a href={`/projects/${project.id}`}>
+                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+                        Buka Form Review Lengkap
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <div className="pb-2 border-b mb-4">
+                  <h3 className="text-lg font-medium">Form Review Proyek</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Berikan penilaian Anda terhadap proyek yang telah selesai
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Evaluasi Keseluruhan</h4>
+                    <Textarea 
+                      placeholder="Berikan tanggapan Anda tentang proyek ini secara keseluruhan..." 
+                      className="min-h-[150px]"
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <a href={`/projects/${project.id}`}>
+                      <Button className="w-full">
+                        Lanjutkan ke Form Review Lengkap
+                      </Button>
+                    </a>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Form review lengkap memiliki opsi tambahan termasuk upload lampiran
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="bg-muted px-4 py-3 sm:flex sm:flex-row-reverse mt-4 -mx-6 -mb-6 border-t border-border">
