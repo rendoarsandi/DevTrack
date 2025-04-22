@@ -96,7 +96,7 @@ export default function ProjectDetail() {
                   {shouldShowReviewComponents && (
                     <>
                       <div className="mt-6">
-                        <Tabs defaultValue="checklist">
+                        <Tabs defaultValue={project.status === "under_review" ? "review" : "checklist"}>
                           <TabsList className="w-full">
                             <TabsTrigger value="checklist" className="flex items-center">
                               <CheckCircle2 className="h-4 w-4 mr-2" />
