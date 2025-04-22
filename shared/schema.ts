@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -75,7 +75,27 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "new_milestone",     // Milestone baru ditambahkan
   "milestone_update",  // Milestone diupdate
   "payment_update",    // Update pembayaran project
+  "invoice_created",   // Invoice baru dibuat
+  "payment_received",  // Pembayaran diterima
   "admin_action"       // Tindakan admin lainnya
+]);
+
+// Enum untuk status invoice
+export const invoiceStatusEnum = pgEnum("invoice_status", [
+  "draft",        // Invoice dibuat tapi belum dikirim
+  "sent",         // Invoice sudah dikirim ke client
+  "paid",         // Invoice sudah dibayar
+  "partial",      // Invoice dibayar sebagian
+  "overdue",      // Invoice sudah lewat tanggal jatuh tempo
+  "cancelled"     // Invoice dibatalkan
+]);
+
+// Enum untuk tipe pembayaran
+export const paymentTypeEnum = pgEnum("payment_type", [
+  "dp",           // Down Payment (biasanya 50%)
+  "final",        // Pembayaran akhir
+  "milestone",    // Pembayaran milestone
+  "full"          // Pembayaran penuh (100%)
 ]);
 
 // Tabel untuk notifikasi
