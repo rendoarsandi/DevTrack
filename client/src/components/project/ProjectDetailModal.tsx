@@ -62,8 +62,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       setFeedbackContent("");
       toast({
-        title: "Feedback submitted successfully",
-        description: "The development team will review your feedback soon."
+        title: "Message sent successfully",
+        description: "The development team will respond to your message soon."
       });
     }
   });
@@ -106,8 +106,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       submitFeedbackMutation.mutate(feedbackContent);
     } else {
       toast({
-        title: "Feedback required",
-        description: "Please provide some feedback before submitting.",
+        title: "Message required",
+        description: "Please type your message before sending.",
         variant: "destructive"
       });
     }
@@ -254,7 +254,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               value="feedback" 
               className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
             >
-              Feedback
+              Messages
             </TabsTrigger>
           </TabsList>
 
@@ -438,9 +438,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           <TabsContent value="feedback" className="space-y-4 mt-0">
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium mb-2">Submit Feedback</h4>
+                <h4 className="text-sm font-medium mb-2">Send Message to Developer Team</h4>
                 <Textarea 
-                  placeholder="Enter your feedback here..." 
+                  placeholder="Ask questions or provide feedback about your project..." 
                   className="resize-none"
                   value={feedbackContent}
                   onChange={(e) => setFeedbackContent(e.target.value)}
@@ -454,12 +454,12 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   {submitFeedbackMutation.isPending ? (
                     <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
-                  Submit Feedback
+                  Send Message
                 </Button>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium mb-2">Previous Feedback</h4>
+                <h4 className="text-sm font-medium mb-2">Message History</h4>
                 {isLoadingFeedbacks ? (
                   <div className="flex justify-center p-4">
                     <Loader2Icon className="h-5 w-5 animate-spin text-muted" />
@@ -476,7 +476,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No feedback submitted yet.</p>
+                  <p className="text-sm text-muted-foreground">No messages yet. Start a conversation with the development team.</p>
                 )}
               </div>
             </div>
@@ -499,9 +499,12 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           {(project.status !== "awaiting_dp" || project.paymentStatus > 0) && (
             <Button
               className="sm:ml-3"
-              onClick={() => window.open("mailto:developer@example.com")}
+              onClick={() => {
+                setActiveTab("feedback");
+                setFeedbackContent("Hi dev team, I have a question about my project: ");
+              }}
             >
-              Contact Developer
+              Ask Question
             </Button>
           )}
           <Button
