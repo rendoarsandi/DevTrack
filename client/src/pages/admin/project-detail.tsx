@@ -464,7 +464,7 @@ export default function AdminProjectDetail() {
           <TabsList className="mb-4">
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            <TabsTrigger value="feedback">Messages</TabsTrigger>
           </TabsList>
           
           <TabsContent value="activity" className="space-y-4">
@@ -709,12 +709,12 @@ export default function AdminProjectDetail() {
           <TabsContent value="feedback" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Client Feedback</CardTitle>
+                <CardTitle>Client Messages</CardTitle>
               </CardHeader>
               <CardContent>
                 {feedback.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
-                    No feedback provided yet
+                    No messages yet
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -725,7 +725,7 @@ export default function AdminProjectDetail() {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between">
-                            <p className="font-medium">Feedback</p>
+                            <p className="font-medium">Message</p>
                             <span className="text-sm text-muted-foreground">
                               {formatDateTime(item.createdAt)}
                             </span>

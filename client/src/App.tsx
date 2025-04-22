@@ -13,6 +13,7 @@ import ProjectForm from "@/pages/project-form";
 import ProjectDetail from "@/pages/project-detail";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import AdminProjectDetail from "@/pages/admin/project-detail";
+import AdminProjectEdit from "@/pages/admin/project-edit";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/projects/:id" component={ProjectDetail} />
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
       <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
+      <ProtectedAdminRoute path="/admin/projects/:id/edit" component={AdminProjectEdit} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
