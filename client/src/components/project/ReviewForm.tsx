@@ -143,7 +143,7 @@ export function ReviewForm({ project, onComplete }: ReviewFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+        <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as "evaluation" | "action")}>
           <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
             <TabsTrigger value="action">Review Action</TabsTrigger>

@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function ProjectDetail() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const projectId = parseInt(params.id);
 
   // Check if id is a valid number
@@ -58,10 +59,6 @@ export default function ProjectDetail() {
   
   // Show review components conditionally based on project status
   const shouldShowReviewComponents = project.status === "in_progress" || project.status === "under_review";
-  
-  // Dalam workflow otomatis, client tidak boleh submit project untuk review
-  // Hanya admin yang dapat mengubah status project
-  const { toast } = useToast();
 
   return (
     <div className="flex h-screen overflow-hidden">
