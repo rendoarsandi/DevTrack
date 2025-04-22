@@ -284,7 +284,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         const attachmentsJSON = JSON.stringify(attachmentsData);
         
         // Tambahkan ke pesan dengan tag pembatas
-        content = `${content}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        content = `${content.trim()}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
         
         console.log("Sending message with attachments:", content);
       }
@@ -324,7 +324,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         const attachmentsJSON = JSON.stringify(attachmentsData);
         
         // Tambahkan ke pesan dengan tag pembatas
-        message = `${message}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        message = `${message.trim()}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
         
         console.log("Sending accept message with attachments:", uploadedFiles.length);
       }
@@ -400,7 +400,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         const attachmentsJSON = JSON.stringify(attachmentsData);
         
         // Tambahkan ke pesan dengan tag pembatas
-        message = `${message}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
+        message = `${message.trim()}\n\n---ATTACHMENTS_DATA---\n${attachmentsJSON}\n---END_ATTACHMENTS_DATA---`;
         
         console.log("Sending request changes with attachments:", uploadedFiles.length);
       }
@@ -881,8 +881,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 ) : feedbacks && feedbacks.length > 0 ? (
                   <ul className="space-y-3 mt-2">
                     {feedbacks.map((feedback, index) => {
-                      // Periksa apakah pesan berisi tautan lampiran dengan format [Attachment: name](url)
-                      const hasAttachments = feedback.content.includes('[Attachment:');
+                      // Periksa apakah pesan berisi tautan lampiran (baik format lama atau baru)
+                      const hasAttachments = feedback.content.includes('[Attachment:') || feedback.content.includes('---ATTACHMENTS_DATA---');
                       
                       // Pisahkan konten pesan utama dan lampiran 
                       let mainContent = feedback.content;
