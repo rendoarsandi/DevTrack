@@ -214,7 +214,7 @@ export default function AdminProjectDetail() {
               variant="outline"
               onClick={() => navigate(`/admin/projects/${id}/edit`)}
             >
-              Edit Project
+              Update Project
             </Button>
           </div>
         </div>
@@ -469,8 +469,42 @@ export default function AdminProjectDetail() {
           
           <TabsContent value="activity" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Project Activity</CardTitle>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    // Log a commit activity
+                    if (typeof window !== 'undefined') {
+                      const commitMessage = window.prompt("Enter GitHub commit message:");
+                      if (commitMessage) {
+                        apiRequest("POST", `/api/projects/${id}/activities`, {
+                          type: "commit",
+                          content: commitMessage
+                        })
+                        .then(() => {
+                          queryClient.invalidateQueries({
+                            queryKey: [`/api/projects/${id}/activities`],
+                          });
+                          toast({
+                            title: "Commit logged",
+                            description: "GitHub commit has been logged to the project"
+                          });
+                        })
+                        .catch(err => {
+                          toast({
+                            title: "Error",
+                            description: err.message || "Failed to log commit",
+                            variant: "destructive"
+                          });
+                        });
+                      }
+                    }
+                  }}
+                  size="sm"
+                >
+                  Log GitHub Commit
+                </Button>
               </CardHeader>
               <CardContent>
                 {activities.length === 0 ? (
@@ -481,17 +515,35 @@ export default function AdminProjectDetail() {
                   <div className="space-y-4">
                     {activities.map((activity) => (
                       <div key={activity.id} className="flex gap-3">
-                        <div className="p-2 h-fit rounded-full bg-blue-100 text-blue-700">
-                          <CalendarClock className="h-4 w-4" />
+                        <div className={`p-2 h-fit rounded-full ${
+                          activity.type === 'commit' 
+                            ? 'bg-green-100 text-green-700' 
+                            : activity.type === 'payment' 
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : activity.type === 'quotation'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {activity.type === 'commit' ? (
+                            <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="4"></circle>
+                              <line x1="1.05" y1="12" x2="7" y2="12"></line>
+                              <line x1="17.01" y1="12" x2="22.96" y2="12"></line>
+                            </svg>
+                          ) : activity.type === 'payment' ? (
+                            <DollarSign className="h-4 w-4" />
+                          ) : (
+                            <CalendarClock className="h-4 w-4" />
+                          )}
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between">
-                            <p className="font-medium">{activity.type}</p>
+                            <p className="font-medium capitalize">{activity.type}</p>
                             <span className="text-sm text-muted-foreground">
                               {formatDateTime(activity.createdAt)}
                             </span>
                           </div>
-                          <p>{activity.content}</p>
+                          <p className={activity.type === 'commit' ? 'font-mono text-sm' : ''}>{activity.content}</p>
                           <Separator className="my-2" />
                         </div>
                       </div>
@@ -504,13 +556,54 @@ export default function AdminProjectDetail() {
           
           <TabsContent value="milestones" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Project Milestones</CardTitle>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    // Open a dialog to create a new milestone
+                    if (typeof window !== 'undefined') {
+                      const title = window.prompt("Enter milestone title:");
+                      if (title) {
+                        const description = window.prompt("Enter description (optional):");
+                        const dueDate = new Date();
+                        dueDate.setDate(dueDate.getDate() + 7); // Default due in 1 week
+                        
+                        // Create a new milestone
+                        apiRequest("POST", `/api/projects/${id}/milestones`, {
+                          title,
+                          description: description || "",
+                          dueDate: dueDate.toISOString(),
+                          completed: false
+                        })
+                        .then(() => {
+                          queryClient.invalidateQueries({
+                            queryKey: [`/api/projects/${id}/milestones`],
+                          });
+                          toast({
+                            title: "Milestone added",
+                            description: "New milestone has been created"
+                          });
+                        })
+                        .catch(err => {
+                          toast({
+                            title: "Error",
+                            description: err.message || "Failed to create milestone",
+                            variant: "destructive"
+                          });
+                        });
+                      }
+                    }
+                  }}
+                  size="sm"
+                >
+                  Add Milestone
+                </Button>
               </CardHeader>
               <CardContent>
                 {milestones.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
-                    No milestones set yet
+                    No milestones set yet. Add some milestones to track project progress.
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -523,9 +616,84 @@ export default function AdminProjectDetail() {
                               Due: {formatDateTime(milestone.dueDate)}
                             </p>
                           </div>
-                          <Badge variant={milestone.completed ? "default" : "outline"}>
-                            {milestone.completed ? "Completed" : "Pending"}
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Badge 
+                              variant={milestone.completed ? "default" : "outline"}
+                              className="cursor-pointer"
+                              onClick={() => {
+                                // Toggle milestone completion status
+                                const newStatus = !milestone.completed;
+                                apiRequest("PATCH", `/api/projects/${id}/milestones/${milestone.id}`, {
+                                  completed: newStatus
+                                })
+                                .then(() => {
+                                  queryClient.invalidateQueries({
+                                    queryKey: [`/api/projects/${id}/milestones`],
+                                  });
+                                  
+                                  // Also update project progress
+                                  const completedCount = milestones.filter(m => 
+                                    m.id !== milestone.id ? m.completed : newStatus
+                                  ).length;
+                                  const progress = Math.round((completedCount / milestones.length) * 100);
+                                  
+                                  apiRequest("PATCH", `/api/admin/projects/${id}`, {
+                                    progress: progress
+                                  })
+                                  .then(() => {
+                                    queryClient.invalidateQueries({
+                                      queryKey: [`/api/admin/projects/${id}`],
+                                    });
+                                    queryClient.invalidateQueries({
+                                      queryKey: ["/api/admin/projects"],
+                                    });
+                                  });
+                                  
+                                  toast({
+                                    title: newStatus ? "Milestone completed" : "Milestone reopened",
+                                    description: `Milestone "${milestone.title}" has been ${newStatus ? 'marked as completed' : 'reopened'}`
+                                  });
+                                })
+                                .catch(err => {
+                                  toast({
+                                    title: "Error",
+                                    description: err.message || "Failed to update milestone",
+                                    variant: "destructive"
+                                  });
+                                });
+                              }}
+                            >
+                              {milestone.completed ? "Completed" : "Mark Complete"}
+                            </Badge>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                if (typeof window !== 'undefined' && confirm("Are you sure you want to delete this milestone?")) {
+                                  apiRequest("DELETE", `/api/projects/${id}/milestones/${milestone.id}`)
+                                  .then(() => {
+                                    queryClient.invalidateQueries({
+                                      queryKey: [`/api/projects/${id}/milestones`],
+                                    });
+                                    toast({
+                                      title: "Milestone deleted",
+                                      description: `Milestone "${milestone.title}" has been deleted`
+                                    });
+                                  })
+                                  .catch(err => {
+                                    toast({
+                                      title: "Error",
+                                      description: err.message || "Failed to delete milestone",
+                                      variant: "destructive"
+                                    });
+                                  });
+                                }
+                              }}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                         {milestone.description && (
                           <p className="mt-2">{milestone.description}</p>
