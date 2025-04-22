@@ -922,6 +922,24 @@ export default function AdminProjectDetail() {
             </Card>
           </TabsContent>
 
+          {/* Live Chat Tab - Available for all projects */}
+          <TabsContent value="livechat" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessagesSquare className="h-5 w-5 mr-2 text-blue-600" />
+                  <span>Live Chat</span>
+                </CardTitle>
+                <CardDescription>
+                  Real-time communication with client for this project
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LiveChat projectId={parseInt(id)} isAdmin={true} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           {/* Project Review Tab - Only shown for projects under review */}
           {project.status === "under_review" && (
             <TabsContent value="review" className="space-y-4">
