@@ -44,9 +44,9 @@ export const feedback = pgTable("feedback", {
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull().references(() => projects.id),
-  type: text("type").notNull(), // "commit", "payment", "feedback", "quotation"
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  type: text("type").notNull(), // "commit", "payment", "feedback", "quotation", "status_change"
+  description: text("description").notNull(), // Changed from content for better semantics
+  timestamp: timestamp("timestamp").notNull().defaultNow(), // Changed from createdAt for consistency
 });
 
 export const milestones = pgTable("milestones", {
@@ -96,7 +96,7 @@ export const insertFeedbackSchema = createInsertSchema(feedback).pick({
 export const insertActivitySchema = createInsertSchema(activities).pick({
   projectId: true,
   type: true,
-  content: true,
+  description: true,
 });
 
 export const insertMilestoneSchema = createInsertSchema(milestones).pick({

@@ -41,6 +41,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  app.get("/api/admin/projects/:id", adminAuthMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid project ID" });
+      
+      const project = await storage.getProject(id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      return res.json(project);
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/admin/projects/:id", adminAuthMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid project ID" });
+      
+      const project = await storage.getProject(id);
+      if (!project) return res.status(404).json({ message: "Project not found" });
+      
+      const validatedData = updateProjectSchema.parse({
+        ...req.body,
+        id,
+      });
+      
+      const updatedProject = await storage.updateProject(validatedData);
+      
+      // Create activity record for status changes
+      if (req.body.status && req.body.status !== project.status) {
+        await storage.createActivity({
+          projectId: id,
+          type: "status_change",
+          description: `Project status changed from ${project.status} to ${req.body.status}`,
+          timestamp: new Date(),
+        });
+      }
+      
+      return res.json(updatedProject);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get("/api/admin/users", adminAuthMiddleware, async (req, res) => {
+    try {
+      // This would need a getUsers method in storage, 
+      // but we'll handle this in the future.
+      // For now, return empty array
+      return res.json([]);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Projects Routes
   app.get("/api/projects", async (req, res) => {

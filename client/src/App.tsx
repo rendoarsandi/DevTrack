@@ -12,6 +12,7 @@ import { ProtectedAdminRoute } from "./lib/protected-admin-route";
 import ProjectForm from "@/pages/project-form";
 import ProjectDetail from "@/pages/project-detail";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
+import AdminProjectDetail from "@/pages/admin/project-detail";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/projects/new" component={ProjectForm} />
       <ProtectedRoute path="/projects/:id" component={ProjectDetail} />
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
+      <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
