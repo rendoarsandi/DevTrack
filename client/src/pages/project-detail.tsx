@@ -82,12 +82,12 @@ export default function ProjectDetail() {
                 <div className="lg:col-span-2">
                   {/* Main project details */}
                   <div className="mb-6">
-                    <div className="border rounded-lg p-5 shadow-sm bg-white">
+                    <div className="border rounded-lg p-5 shadow-sm bg-card">
                       <div className="pb-2">
                         <h2 className="text-2xl font-bold">{project.title}</h2>
                         <div className="flex justify-between items-center">
-                          <p className="text-gray-500">{project.description}</p>
-                          <div className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          <p className="text-muted-foreground">{project.description}</p>
+                          <div className="bg-primary/10 text-primary text-xs font-medium px-2.5 py-0.5 rounded-full">
                             {project.status === "pending_review" ? "Under Review" :
                              project.status === "awaiting_dp" ? "Awaiting Deposit" :
                              project.status === "in_progress" ? "In Progress" :

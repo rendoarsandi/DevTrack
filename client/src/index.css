@@ -29,25 +29,32 @@
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --primary: 207 90% 54%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 153 54% 46%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 10 100% 60%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --ring: 240 4.9% 83.9%;
+  /* Warna utama aplikasi dalam tema gelap */
+  --background: 222 47% 11%; /* #0F172A */
+  --foreground: 210 40% 98%; /* #F8FAFC */
+  --muted: 217 33% 17%; /* #1E293B */
+  --muted-foreground: 215 20% 65%; /* #94A3B8 */
+  
+  /* Warna elemen UI dalam tema gelap */
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  
+  /* Tetap gunakan warna primer dan sekunder yang sama, dengan penyesuaian */
+  --primary: 210 100% 50%; /* #0066FF Sedikit lebih cerah */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 153 54% 56%; /* #3ECB91 Sedikit lebih cerah */
+  --secondary-foreground: 210 40% 98%;
+  --accent: 10 100% 65%; /* #FF6B47 Sedikit lebih cerah */
+  --accent-foreground: 210 40% 98%;
+  
+  /* Warna untuk peringatan dan error dalam tema gelap */
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 217 33% 17%;
 }
 
 @layer base {
@@ -56,7 +63,7 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground transition-colors duration-300;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -82,5 +89,58 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
+  }
+  
+  /* Penyesuaian khusus tema gelap */
+  .dark .bg-white {
+    @apply bg-card;
+  }
+  
+  .dark .border {
+    @apply border-border;
+  }
+
+  /* Penyesuaian warna notifikasi pada tema gelap */
+  .dark .bg-amber-50 {
+    @apply bg-amber-950/30;
+  }
+  
+  .dark .text-amber-800 {
+    @apply text-amber-300;
+  }
+  
+  .dark .text-amber-700 {
+    @apply text-amber-400;
+  }
+
+  .dark .border-amber-200 {
+    @apply border-amber-800;
+  }
+  
+  .dark .border-amber-500 {
+    @apply border-amber-600;
+  }
+  
+  .dark .bg-amber-100 {
+    @apply bg-amber-900/60;
+  }
+  
+  .dark .hover\:bg-amber-200:hover {
+    @apply hover:bg-amber-800;
+  }
+  
+  .dark .bg-blue-100 {
+    @apply bg-blue-950/40;
+  }
+  
+  .dark .text-blue-800 {
+    @apply text-blue-300;
+  }
+  
+  /* Transisi halus saat pergantian tema */
+  .dark *, 
+  .dark *::before,
+  .dark *::after {
+    transition-duration: 300ms;
   }
 }
