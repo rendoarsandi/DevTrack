@@ -33,8 +33,8 @@ interface Activity {
   id: number;
   projectId: number;
   type: string;
-  description: string;
-  timestamp: Date;
+  content: string;
+  createdAt: Date;
 }
 
 export default function AdminProjectDetail() {
@@ -291,7 +291,7 @@ export default function AdminProjectDetail() {
           <CardContent>
             <p className="whitespace-pre-wrap">{project.description}</p>
             
-            {project.attachments && project.attachments.length > 0 && (
+            {project.attachments && Array.isArray(project.attachments) && project.attachments.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
@@ -341,10 +341,10 @@ export default function AdminProjectDetail() {
                           <div className="flex justify-between">
                             <p className="font-medium">{activity.type}</p>
                             <span className="text-sm text-muted-foreground">
-                              {formatDateTime(activity.timestamp)}
+                              {formatDateTime(activity.createdAt)}
                             </span>
                           </div>
-                          <p>{activity.description}</p>
+                          <p>{activity.content}</p>
                           <Separator className="my-2" />
                         </div>
                       </div>
@@ -410,9 +410,9 @@ export default function AdminProjectDetail() {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between">
-                            <p className="font-medium">{item.type}</p>
+                            <p className="font-medium">Feedback</p>
                             <span className="text-sm text-muted-foreground">
-                              {formatDateTime(item.timestamp)}
+                              {formatDateTime(item.createdAt)}
                             </span>
                           </div>
                           <p>{item.content}</p>

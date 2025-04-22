@@ -77,8 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createActivity({
           projectId: id,
           type: "status_change",
-          description: `Project status changed from ${project.status} to ${req.body.status}`,
-          timestamp: new Date(),
+          content: `Project status changed from ${project.status} to ${req.body.status}`,
         });
       }
       
