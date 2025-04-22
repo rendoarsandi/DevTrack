@@ -339,6 +339,12 @@ export default function AdminProjectDetail() {
                 const feedback = (form.elements.namedItem('feedback') as HTMLTextAreaElement).value;
                 const adminFeedback = feedback.trim();
                 
+                // Get quote and timeline values (if changed)
+                const quoteInput = form.elements.namedItem('quote') as HTMLInputElement;
+                const timelineInput = form.elements.namedItem('timeline') as HTMLInputElement;
+                const quote = quoteInput.value ? parseInt(quoteInput.value) : undefined;
+                const timeline = timelineInput.value ? parseInt(timelineInput.value) : undefined;
+                
                 if (!adminFeedback) {
                   toast({
                     title: "Error",
@@ -351,17 +357,49 @@ export default function AdminProjectDetail() {
                 // Get selected status from form
                 const status = (form.elements.namedItem('status') as HTMLSelectElement).value;
                 
-                // Update project with feedback and status
+                // Update project with feedback, status, and potentially new quote/timeline
                 updateProjectMutation.mutate({
                   status,
                   adminFeedback,
+                  ...(quote !== undefined && { quote }),
+                  ...(timeline !== undefined && { timeline }),
                 });
               }}>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quote">Suggested Price (USD)</Label>
+                    <Input 
+                      id="quote" 
+                      name="quote"
+                      type="number" 
+                      placeholder={project.quote.toString()}
+                      min="1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Current: ${project.quote}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="timeline">Timeline (Weeks)</Label>
+                    <Input 
+                      id="timeline" 
+                      name="timeline"
+                      type="number"
+                      placeholder={project.timeline.toString()}
+                      min="1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Current: {project.timeline} weeks
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-4">
                   <Label htmlFor="feedback">Feedback to Client</Label>
                   <Textarea 
                     id="feedback" 
-                    placeholder="Provide feedback about the project request..."
+                    placeholder="Provide feedback about the project request, suggest changes to pricing or timeline if needed..."
                     rows={4}
                     defaultValue={project.adminFeedback || ""}
                     required
@@ -375,7 +413,7 @@ export default function AdminProjectDetail() {
                       <SelectValue placeholder="Select decision" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending_review">Keep in Review</SelectItem>
+                      <SelectItem value="pending_review">Keep in Review (Request Changes)</SelectItem>
                       <SelectItem value="awaiting_dp">Approve & Request Payment</SelectItem>
                     </SelectContent>
                   </Select>

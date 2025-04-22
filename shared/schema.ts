@@ -121,6 +121,8 @@ export const updateProjectSchema = z.object({
   paymentStatus: z.number().optional(),
   progress: z.number().min(0).max(100).optional(),
   adminFeedback: z.string().optional(), // Admin dapat memberikan feedback pada permintaan
+  quote: z.number().positive().optional(), // Admin dapat mengubah harga penawaran
+  timeline: z.number().positive().optional(), // Admin dapat mengubah perkiraan waktu penyelesaian
 });
 
 // Update schemas
