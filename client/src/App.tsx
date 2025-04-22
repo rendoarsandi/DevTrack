@@ -11,6 +11,9 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { ProtectedAdminRoute } from "./lib/protected-admin-route";
 import ProjectForm from "@/pages/project-form";
 import ProjectDetail from "@/pages/project-detail";
+import Messages from "@/pages/messages";
+import Payments from "@/pages/payments";
+import Settings from "@/pages/settings";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import AdminProjectDetail from "@/pages/admin/project-detail";
 import AdminProjectEdit from "@/pages/admin/project-edit";
@@ -30,6 +33,9 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/projects/new" component={ProjectForm} />
       <ProtectedRoute path="/projects/:id" component={SafeProjectDetail} />
+      <ProtectedRoute path="/messages" component={Messages} />
+      <ProtectedRoute path="/payments" component={Payments} />
+      <ProtectedRoute path="/settings" component={Settings} />
       <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
       <ProtectedAdminRoute path="/admin/projects/:id" component={AdminProjectDetail} />
       <ProtectedAdminRoute path="/admin/projects/:id/edit" component={AdminProjectEdit} />
