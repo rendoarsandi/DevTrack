@@ -421,31 +421,36 @@ export default function AdminProjectDetail() {
           <CardContent>
             <p className="whitespace-pre-wrap">{project.description}</p>
             
-            {project.attachments && typeof project.attachments === 'object' && project.attachments !== null && (
+            {/* Render attachments if available */}
+            {typeof project.attachments === 'object' && project.attachments !== null && Array.isArray(project.attachments) && (
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Array.isArray(project.attachments) && project.attachments.length > 0 && (project.attachments as any[]).map((attachment: any, index: number) => {
-                    // Handle different attachment formats (string or object)
-                    const attachmentName = typeof attachment === 'string' 
-                      ? attachment 
-                      : (attachment && typeof attachment === 'object' && 'name' in attachment && typeof attachment.name === 'string') 
-                        ? attachment.name 
-                        : 'file';
-                    
-                    return (
-                      <a 
-                        key={index}
-                        href={`/api/files/${attachmentName}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
-                      >
-                        <File className="h-4 w-4 mr-2" />
-                        <span className="text-sm font-medium">{attachmentName}</span>
-                      </a>
-                    );
-                  })}
+                  {project.attachments.length > 0 ? 
+                    (project.attachments as any[]).map((attachment: any, index: number) => {
+                      // Handle different attachment formats (string or object)
+                      const attachmentName = typeof attachment === 'string' 
+                        ? attachment 
+                        : (attachment && typeof attachment === 'object' && 'name' in attachment && typeof attachment.name === 'string') 
+                          ? attachment.name 
+                          : `file-${index}`;
+                      
+                      return (
+                        <a 
+                          key={index}
+                          href={`/api/files/${attachmentName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center p-2 bg-secondary rounded-md hover:bg-secondary/80"
+                        >
+                          <File className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-medium">{attachmentName}</span>
+                        </a>
+                      );
+                    })
+                    : 
+                    <p className="text-xs text-muted-foreground">No attachments available</p>
+                  }
                 </div>
               </div>
             )}
