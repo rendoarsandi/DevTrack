@@ -32,6 +32,8 @@ export const statusColorMap: Record<string, { bg: string; text: string }> = {
 // Format status labels for display
 export function formatStatusLabel(status: string): string {
   switch (status) {
+    case 'pending_review':
+      return 'Pending Review';
     case 'awaiting_dp':
       return 'Awaiting Down Payment';
     case 'in_progress':
