@@ -12,6 +12,7 @@ import {
   Menu,
   X
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -141,6 +142,10 @@ export function MobileMenu() {
                   </NavItem>
 
                   <div className="pt-6 mt-6 border-t border-border">
+                    <div className="flex items-center justify-between px-3 py-2 mb-4">
+                      <span className="text-sm font-medium">Appearance</span>
+                      <ThemeToggle />
+                    </div>
                     <button
                       onClick={handleLogout}
                       className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-accent hover:bg-muted w-full text-left"

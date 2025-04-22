@@ -4,6 +4,7 @@ import {
   Users, ClipboardList, BarChart, LogOut, 
   Settings, ChevronDown, Menu 
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -125,6 +126,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   </NavItem>
                 ))}
               </ul>
+              
+              <div className="mt-4 px-2">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium">Appearance</span>
+                  <ThemeToggle />
+                </div>
+              </div>
             </nav>
           </div>
           
@@ -201,6 +209,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       </NavItem>
                     ))}
                   </ul>
+                  
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm font-medium">Appearance</span>
+                      <ThemeToggle />
+                    </div>
+                  </div>
                 </nav>
                 
                 <div className="p-4 border-t mt-auto">
