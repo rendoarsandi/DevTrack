@@ -28,7 +28,10 @@ import {
   File, 
   MessageSquare, 
   User,
-  ClipboardList
+  ClipboardList,
+  ClipboardCheck,
+  FileCheck,
+  Edit
 } from "lucide-react";
 import { ProjectReviewForm } from "@/components/admin/ProjectReviewForm";
 import { Project, Feedback, Milestone } from "@shared/schema";
@@ -248,6 +251,32 @@ export default function AdminProjectDetail() {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Action Buttons for Common Status Transitions */}
+            {project.status === "in_progress" && (
+              <Button
+                variant="default"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={() => handleStatusChange("under_review")}
+                disabled={updateProjectMutation.isPending}
+              >
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Submit for Client Review
+              </Button>
+            )}
+            
+            {project.status === "awaiting_handover" && (
+              <Button
+                variant="default" 
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => handleStatusChange("completed")}
+                disabled={updateProjectMutation.isPending}
+              >
+                <FileCheck className="h-4 w-4 mr-2" />
+                Complete Handover
+              </Button>
+            )}
+            
+            {/* Status Dropdown */}
             <Select
               value={project.status}
               onValueChange={handleStatusChange}
@@ -305,6 +334,7 @@ export default function AdminProjectDetail() {
               variant="outline"
               onClick={() => navigate(`/admin/projects/${id}/edit`)}
             >
+              <Edit className="h-4 w-4 mr-2" />
               Edit Project
             </Button>
           </div>
