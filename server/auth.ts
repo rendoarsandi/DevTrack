@@ -36,6 +36,7 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
+      secure: false, // Set to true in production with HTTPS
     }
   };
 
