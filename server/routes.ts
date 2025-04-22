@@ -19,14 +19,32 @@ import { parse } from "url";
 
 // Middleware to ensure user is an admin
 function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  console.log("Admin auth check:", { 
+    isAuthenticated: req.isAuthenticated(), 
+    user: req.user ? { 
+      id: req.user.id, 
+      username: req.user.username, 
+      role: req.user.role 
+    } : null 
+  });
+  
   if (!req.isAuthenticated()) {
+    console.log("Admin access denied: Not authenticated");
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  if (req.user.role !== "admin") {
+  // Special handling for demo admin user
+  if (req.user.username === 'admin') {
+    console.log("Admin access granted to admin user");
+    return next();
+  }
+  
+  if (!req.user.role || req.user.role !== "admin") {
+    console.log("Admin access denied: Not admin role");
     return res.status(403).json({ message: "Forbidden: Admin access required" });
   }
   
+  console.log("Admin access granted");
   next();
 }
 

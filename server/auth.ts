@@ -32,11 +32,12 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "devtrack-secure-session-secret",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: storage.sessionStore,
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
     }
   };
 
@@ -58,8 +59,21 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    try {
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return done(null, false);
+      }
+      
+      // Pastikan informasi peran user dimuat
+      console.log("Deserializing user:", { id: user.id, username: user.username, role: user.role });
+      
+      done(null, user);
+    } catch (error) {
+      console.error("Error deserializing user:", error);
+      done(error, null);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
