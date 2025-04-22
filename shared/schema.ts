@@ -2,12 +2,15 @@ import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb } fro
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const roleEnum = pgEnum("role", ["client", "admin"]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
+  role: roleEnum("role").notNull().default("client"),
 });
 
 export const statusEnum = pgEnum("status", [
@@ -65,6 +68,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   email: true,
+  role: true,
+}).extend({
+  role: z.enum(["client", "admin"]).default("client"),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
