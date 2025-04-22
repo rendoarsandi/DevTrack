@@ -146,6 +146,34 @@ export class DatabaseStorage implements IStorage {
       updateValues.adminFeedback = updateData.adminFeedback;
     }
     
+    // Handle quote update
+    if (updateData.quote !== undefined) {
+      updateValues.quote = updateData.quote;
+      
+      // Create a quotation activity if price changed
+      if (project.quote !== updateData.quote) {
+        await this.createActivity({
+          projectId: project.id,
+          type: "quotation",
+          content: `Price updated from $${project.quote} to $${updateData.quote}`
+        });
+      }
+    }
+    
+    // Handle timeline update
+    if (updateData.timeline !== undefined) {
+      updateValues.timeline = updateData.timeline;
+      
+      // Create an activity if timeline changed
+      if (project.timeline !== updateData.timeline) {
+        await this.createActivity({
+          projectId: project.id,
+          type: "status_change",
+          content: `Project timeline updated from ${project.timeline} to ${updateData.timeline} weeks`
+        });
+      }
+    }
+    
     const [updatedProject] = await db
       .update(projects)
       .set(updateValues)
