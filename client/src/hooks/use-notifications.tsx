@@ -16,13 +16,14 @@ export function useNotifications() {
   });
   
   const { 
-    data: unreadCount = 0, 
+    data: countData,
     isLoading: isCountLoading 
   } = useQuery<{count: number}>({
     queryKey: ['/api/notifications/unread-count'],
     staleTime: 30000, // 30 seconds
-    select: (data) => data.count,
   });
+  
+  const unreadCount = countData?.count || 0;
   
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {

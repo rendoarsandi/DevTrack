@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { formatDistanceToNow } from 'date-fns';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 import {
   DropdownMenu,
@@ -33,7 +33,7 @@ export function NotificationDropdown() {
     markAllAsRead 
   } = useNotifications();
   
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   
   const getNotificationIcon = (type: string) => {
