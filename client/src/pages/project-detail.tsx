@@ -6,7 +6,7 @@ import { ProjectDetailModal } from "@/components/project/ProjectDetailModal";
 import { ActivityFeed } from "@/components/project/ActivityFeed";
 import { ReviewChecklist } from "@/components/project/ReviewChecklist";
 import { TestingDocumentation } from "@/components/project/TestingDocumentation";
-import { ReviewForm } from "@/components/project/ReviewForm";
+import { EnhancedReviewForm } from "@/components/project/EnhancedReviewForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText, ClipboardCheck } from "lucide-react";
 import { Project } from "@shared/schema";
@@ -125,7 +125,7 @@ export default function ProjectDetail() {
                           
                           {project.status === "under_review" && (
                             <TabsContent value="review" className="mt-4">
-                              <ReviewForm 
+                              <EnhancedReviewForm 
                                 project={project}
                                 onComplete={() => {
                                   queryClient.invalidateQueries({
