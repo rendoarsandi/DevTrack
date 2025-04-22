@@ -31,7 +31,19 @@ interface ProjectDetailModalProps {
 }
 
 export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetailModalProps) {
-  const [activeTab, setActiveTab] = useState("overview");
+  // Cek jika perlu menampilkan tab review berdasarkan localStorage
+  const initialTab = (() => {
+    if (typeof window !== 'undefined') {
+      const openReviewTab = localStorage.getItem('open_review_tab');
+      if (openReviewTab === 'true') {
+        localStorage.removeItem('open_review_tab'); // Reset state
+        return "review";
+      }
+    }
+    return "overview";
+  })();
+  
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [feedbackContent, setFeedbackContent] = useState("");
   const { toast } = useToast();
 
@@ -546,45 +558,100 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-md mb-4">
                 <h3 className="text-lg font-medium text-amber-800 mb-2">Evaluasi Proyek Anda</h3>
                 <p className="text-amber-700 mb-4">
-                  Proyek Anda telah selesai dan siap untuk dievaluasi. Silakan gunakan form di bawah ini untuk memberikan review Anda.
+                  Proyek Anda telah selesai dan siap untuk dievaluasi. Mohon berikan keputusan apakah proyek ini diterima atau perlu perbaikan.
                 </p>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <a href={`/projects/${project.id}`}>
-                      <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white">
-                        Buka Form Review Lengkap
-                      </Button>
-                    </a>
-                  </div>
-                </div>
               </div>
               
-              <div className="p-4 border rounded-lg">
-                <div className="pb-2 border-b mb-4">
-                  <h3 className="text-lg font-medium">Form Review Proyek</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Berikan penilaian Anda terhadap proyek yang telah selesai
-                  </p>
+              <div className="p-4 border rounded-lg space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-2">Evaluasi Keseluruhan</h3>
+                  <Textarea 
+                    placeholder="Berikan komentar Anda tentang proyek ini..." 
+                    className="min-h-[100px]"
+                    value={feedbackContent}
+                    onChange={(e) => setFeedbackContent(e.target.value)}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Evaluasi Keseluruhan</h4>
-                    <Textarea 
-                      placeholder="Berikan tanggapan Anda tentang proyek ini secara keseluruhan..." 
-                      className="min-h-[150px]"
-                    />
+                
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Upload Media (Opsional)</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Unggah screenshot atau file lain sebagai bukti testing
+                  </p>
+                  <div className="border border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
+                    <input type="file" className="hidden" id="file-upload" />
+                    <label htmlFor="file-upload" className="cursor-pointer block">
+                      <span className="block mb-1">
+                        <Loader2Icon className="h-6 w-6 mx-auto text-muted-foreground" />
+                      </span>
+                      <span className="text-sm font-medium">
+                        Klik untuk memilih file
+                      </span>
+                      <span className="text-xs text-muted-foreground block mt-1">
+                        Mendukung JPG, PNG, PDF hingga 5MB
+                      </span>
+                    </label>
                   </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <a href={`/projects/${project.id}`}>
-                      <Button className="w-full">
-                        Lanjutkan ke Form Review Lengkap
-                      </Button>
-                    </a>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Form review lengkap memiliki opsi tambahan termasuk upload lampiran
-                    </p>
-                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                  <Button 
+                    variant="outline" 
+                    className="border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      // Aksi untuk menolak proyek
+                      if (!feedbackContent.trim()) {
+                        toast({
+                          title: "Komentar diperlukan",
+                          description: "Mohon berikan alasan penolakan proyek",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      // Submit feedback dan update status
+                      submitFeedbackMutation.mutate(feedbackContent);
+                      apiRequest("PATCH", `/api/projects/${projectId}`, {
+                        status: "in_progress",
+                        progress: Math.max(30, project.progress - 10)
+                      }).then(() => {
+                        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
+                        queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+                        toast({
+                          title: "Proyek perlu perbaikan",
+                          description: "Developer akan memperbaiki proyek berdasarkan feedback Anda"
+                        });
+                        onClose();
+                      });
+                    }}
+                  >
+                    Perlu Perbaikan
+                  </Button>
+                  <Button 
+                    className="bg-secondary hover:bg-secondary/90"
+                    onClick={() => {
+                      // Aksi untuk menerima proyek
+                      const comment = feedbackContent.trim() 
+                        ? feedbackContent
+                        : "Proyek diterima. Terima kasih atas kerja yang baik!";
+                      
+                      submitFeedbackMutation.mutate(comment);
+                      apiRequest("PATCH", `/api/projects/${projectId}`, {
+                        status: "completed",
+                        progress: 100
+                      }).then(() => {
+                        queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
+                        queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
+                        toast({
+                          title: "Proyek diterima!",
+                          description: "Proyek telah selesai. Silahkan lakukan pembayaran akhir"
+                        });
+                        onClose();
+                      });
+                    }}
+                  >
+                    Terima Proyek
+                  </Button>
                 </div>
               </div>
             </TabsContent>
@@ -604,7 +671,17 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               Pay Deposit
             </Button>
           )}
-          {(project.status !== "awaiting_dp" || project.paymentStatus > 0) && (
+          {project.status === "under_review" && (
+            <Button
+              className="sm:ml-3 bg-primary"
+              onClick={() => {
+                setActiveTab("review");
+              }}
+            >
+              Berikan Review
+            </Button>
+          )}
+          {(project.status !== "awaiting_dp" && project.status !== "under_review") && (
             <Button
               className="sm:ml-3"
               onClick={() => {

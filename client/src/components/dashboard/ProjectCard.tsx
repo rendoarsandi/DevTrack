@@ -87,9 +87,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
           variant="ghost"
           size="sm"
           className="text-accent font-medium"
-          asChild
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Project card akan terbuka sendiri di parent component saat di-click
+            // Tidak perlu navigate, hanya butuh state untuk remember bahwa tab review harus aktif
+            localStorage.setItem('open_review_tab', 'true');
+          }}
         >
-          <Link href={`/projects/${project.id}`}>Berikan Review</Link>
+          Berikan Review
         </Button>
       );
     } else if (project.status === "completed") {
