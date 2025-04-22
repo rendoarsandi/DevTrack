@@ -8,7 +8,8 @@ import { ReviewChecklist } from "@/components/project/ReviewChecklist";
 import { TestingDocumentation } from "@/components/project/TestingDocumentation";
 import { EnhancedReviewForm } from "@/components/project/EnhancedReviewForm";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText, ClipboardCheck } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText, ClipboardCheck, AlertCircle } from "lucide-react";
 import { Project } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectProgress } from "@/components/project/ProjectProgress";
@@ -81,11 +82,11 @@ export default function ProjectDetail() {
                 <div className="lg:col-span-2">
                   {/* Main project details */}
                   <div className="mb-6">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-2xl">{project.title}</CardTitle>
+                    <div className="border rounded-lg p-5 shadow-sm bg-white">
+                      <div className="pb-2">
+                        <h2 className="text-2xl font-bold">{project.title}</h2>
                         <div className="flex justify-between items-center">
-                          <p className="text-muted-foreground">{project.description}</p>
+                          <p className="text-gray-500">{project.description}</p>
                           <div className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                             {project.status === "pending_review" ? "Under Review" :
                              project.status === "awaiting_dp" ? "Awaiting Deposit" :
@@ -94,10 +95,10 @@ export default function ProjectDetail() {
                              project.status === "completed" ? "Completed" : "Unknown"}
                           </div>
                         </div>
-                      </CardHeader>
+                      </div>
                       
                       {project.status === "under_review" && (
-                        <CardContent className="pb-0">
+                        <div className="pb-0">
                           <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 mt-2">
                             <div className="flex items-center">
                               <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
@@ -119,9 +120,9 @@ export default function ProjectDetail() {
                               Go to Review Section
                             </Button>
                           </div>
-                        </CardContent>
+                        </div>
                       )}
-                    </Card>
+                    </div>
                   </div>
                   
                   {/* Project details modal for deeper details */}
@@ -169,13 +170,24 @@ export default function ProjectDetail() {
                           </TabsContent>
                           
                           {project.status === "under_review" && (
-                            <TabsContent value="review" className="mt-4">
+                            <TabsContent value="review" className="mt-4" id="review-section">
                               <EnhancedReviewForm 
                                 project={project}
                                 onComplete={() => {
                                   queryClient.invalidateQueries({
                                     queryKey: [`/api/projects/${projectId}`],
                                   });
+                                  
+                                  // Tampilkan notifikasi sukses
+                                  toast({
+                                    title: "Review berhasil dikirim",
+                                    description: "Terima kasih telah mengirimkan review Anda. Status proyek telah diperbarui."
+                                  });
+                                  
+                                  // Arahkan ke halaman proyek setelah beberapa detik
+                                  setTimeout(() => {
+                                    navigate("/");
+                                  }, 3000);
                                 }}
                               />
                             </TabsContent>
