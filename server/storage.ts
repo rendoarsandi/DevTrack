@@ -1,11 +1,13 @@
-import { users, projects, feedback, activities, milestones, notifications } from "@shared/schema";
+import { users, projects, feedback, activities, milestones, notifications, invoices, payments } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Project, InsertProject, UpdateProject,
   Feedback, InsertFeedback, 
   Activity, InsertActivity,
   Milestone, InsertMilestone, UpdateMilestone,
-  Notification, InsertNotification, UpdateNotification
+  Notification, InsertNotification, UpdateNotification,
+  Invoice, InsertInvoice, UpdateInvoice,
+  Payment, InsertPayment
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
@@ -54,6 +56,23 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   updateNotification(notification: UpdateNotification): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<void>;
+  
+  // Invoice methods
+  getInvoices(): Promise<Invoice[]>;
+  getInvoicesByClient(clientId: number): Promise<Invoice[]>;
+  getInvoicesByProject(projectId: number): Promise<Invoice[]>;
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(invoice: UpdateInvoice): Promise<Invoice | undefined>;
+  
+  // Payment methods
+  getPayments(): Promise<Payment[]>;
+  getPaymentsByClient(clientId: number): Promise<Payment[]>;
+  getPaymentsByProject(projectId: number): Promise<Payment[]>;
+  getPaymentsByInvoice(invoiceId: number): Promise<Payment[]>;
+  getPayment(id: number): Promise<Payment | undefined>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
   
   // Session store
   sessionStore: any;
@@ -402,6 +421,278 @@ export class DatabaseStorage implements IStorage {
         eq(notifications.userId, userId),
         eq(notifications.isRead, false)
       ));
+  }
+
+  // Invoice methods
+  async getInvoices(): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByClient(clientId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.clientId, clientId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByProject(projectId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.projectId, projectId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, id));
+    
+    return invoice || undefined;
+  }
+
+  async getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined> {
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.invoiceNumber, invoiceNumber));
+    
+    return invoice || undefined;
+  }
+
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    // Generate invoice number if not provided
+    if (!insertInvoice.invoiceNumber) {
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      // Get count of invoices for today to generate sequential number
+      const todayInvoices = await db
+        .select({ count: count() })
+        .from(invoices)
+        .where(invoices.invoiceNumber.like(`INV-${year}${month}${day}-%`));
+      
+      const count = (todayInvoices[0]?.count || 0) + 1;
+      const sequentialNumber = String(count).padStart(4, '0');
+      
+      insertInvoice.invoiceNumber = `INV-${year}${month}${day}-${sequentialNumber}`;
+    }
+
+    const [invoice] = await db
+      .insert(invoices)
+      .values(insertInvoice)
+      .returning();
+    
+    // Create activity for invoice creation
+    await this.createActivity({
+      projectId: invoice.projectId,
+      type: "payment",
+      content: `Invoice created: ${invoice.invoiceNumber} for ${invoice.amount}`
+    });
+    
+    // Create notification for client
+    await this.createNotification({
+      userId: invoice.clientId,
+      type: "invoice_created",
+      title: "New Invoice",
+      message: `A new invoice (${invoice.invoiceNumber}) has been created for your project.`,
+      projectId: invoice.projectId,
+      metadata: { invoiceId: invoice.id }
+    });
+    
+    return invoice;
+  }
+
+  async updateInvoice(updateData: UpdateInvoice): Promise<Invoice | undefined> {
+    const invoice = await this.getInvoice(updateData.id);
+    if (!invoice) return undefined;
+    
+    const updateValues: Partial<Invoice> = {};
+    let notificationType: "payment_update" | "invoice_created" = "payment_update";
+    let notificationTitle = "Invoice Updated";
+    let notificationMessage = `Your invoice (${invoice.invoiceNumber}) has been updated.`;
+    
+    // Update only the fields that are provided
+    if (updateData.title !== undefined) updateValues.title = updateData.title;
+    if (updateData.description !== undefined) updateValues.description = updateData.description;
+    if (updateData.amount !== undefined) updateValues.amount = updateData.amount;
+    if (updateData.notes !== undefined) updateValues.notes = updateData.notes;
+    if (updateData.termsAndConditions !== undefined) updateValues.termsAndConditions = updateData.termsAndConditions;
+    if (updateData.dueDate !== undefined) updateValues.dueDate = updateData.dueDate;
+    
+    // Handle status changes
+    if (updateData.status !== undefined) {
+      updateValues.status = updateData.status;
+      
+      // Create special notifications based on status
+      if (updateData.status === "paid") {
+        notificationType = "payment_received";
+        notificationTitle = "Payment Received";
+        notificationMessage = `Your payment for invoice ${invoice.invoiceNumber} has been received.`;
+        
+        // If paid, set paidDate if not already set
+        if (!invoice.paidDate) {
+          updateValues.paidDate = new Date();
+        }
+      } else if (updateData.status === "sent") {
+        notificationType = "invoice_created";
+        notificationTitle = "Invoice Sent";
+        notificationMessage = `Invoice ${invoice.invoiceNumber} has been sent to you.`;
+      } else if (updateData.status === "overdue") {
+        notificationTitle = "Invoice Overdue";
+        notificationMessage = `Your invoice ${invoice.invoiceNumber} is now overdue.`;
+      }
+    }
+    
+    // Update paid amount if provided
+    if (updateData.paidAmount !== undefined) {
+      updateValues.paidAmount = updateData.paidAmount;
+      
+      // If paid amount equals full amount, mark as paid
+      if (updateData.paidAmount >= invoice.amount && invoice.status !== "paid") {
+        updateValues.status = "paid";
+        updateValues.paidDate = new Date();
+        
+        notificationType = "payment_received";
+        notificationTitle = "Payment Received";
+        notificationMessage = `Your payment for invoice ${invoice.invoiceNumber} has been received in full.`;
+      } else if (updateData.paidAmount > 0 && updateData.paidAmount < invoice.amount) {
+        // Partial payment
+        updateValues.status = "partial";
+        
+        notificationTitle = "Partial Payment";
+        notificationMessage = `A partial payment of ${updateData.paidAmount} has been received for invoice ${invoice.invoiceNumber}.`;
+      }
+    }
+    
+    // Update Xendit related fields
+    if (updateData.xenditInvoiceId !== undefined) updateValues.xenditInvoiceId = updateData.xenditInvoiceId;
+    if (updateData.xenditInvoiceUrl !== undefined) updateValues.xenditInvoiceUrl = updateData.xenditInvoiceUrl;
+    
+    // Add updatedAt timestamp
+    updateValues.updatedAt = new Date();
+    
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set(updateValues)
+      .where(eq(invoices.id, updateData.id))
+      .returning();
+    
+    // Create notification for the client
+    await this.createNotification({
+      userId: invoice.clientId,
+      type: notificationType,
+      title: notificationTitle,
+      message: notificationMessage,
+      projectId: invoice.projectId,
+      metadata: { invoiceId: invoice.id }
+    });
+    
+    // Create activity log
+    await this.createActivity({
+      projectId: invoice.projectId,
+      type: "payment",
+      content: `Invoice ${invoice.invoiceNumber} updated: ${notificationMessage}`
+    });
+    
+    // Update project payment status if invoice is related to project
+    if (invoice.type === "dp" && updateValues.status === "paid") {
+      // If this is a DP invoice and it's now paid, update project status to in_progress
+      await this.updateProject({
+        id: invoice.projectId,
+        status: "in_progress",
+        paymentStatus: 50 // 50% paid
+      });
+    } else if (invoice.type === "final" && updateValues.status === "paid") {
+      // If this is a final invoice and it's now paid, update project status to completed
+      await this.updateProject({
+        id: invoice.projectId,
+        status: "completed",
+        paymentStatus: 100 // 100% paid
+      });
+    }
+    
+    return updatedInvoice;
+  }
+
+  // Payment methods
+  async getPayments(): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByClient(clientId: number): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.clientId, clientId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByProject(projectId: number): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.projectId, projectId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPaymentsByInvoice(invoiceId: number): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.invoiceId, invoiceId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.id, id));
+    
+    return payment || undefined;
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const [payment] = await db
+      .insert(payments)
+      .values(insertPayment)
+      .returning();
+    
+    // If payment is successful, update invoice
+    if (payment.status === "success") {
+      const invoice = await this.getInvoice(payment.invoiceId);
+      if (invoice) {
+        // Calculate new paid amount
+        const newPaidAmount = (invoice.paidAmount || 0) + payment.amount;
+        
+        // Update invoice with new payment info
+        await this.updateInvoice({
+          id: invoice.id,
+          paidAmount: newPaidAmount,
+          status: newPaidAmount >= invoice.amount ? "paid" : "partial"
+        });
+      }
+    }
+    
+    // Create activity for payment
+    await this.createActivity({
+      projectId: payment.projectId,
+      type: "payment",
+      content: `Payment of ${payment.amount} received via ${payment.method}`
+    });
+    
+    return payment;
   }
 }
 

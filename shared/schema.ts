@@ -111,6 +111,47 @@ export const notifications = pgTable("notifications", {
   metadata: jsonb("metadata") // Untuk menyimpan data terkait notifikasi seperti ID feedback, milestone, dll
 });
 
+// Tabel untuk invoice
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  invoiceNumber: varchar("invoice_number", { length: 20 }).notNull().unique(), // Format INV-YYYYMMDD-XXXX
+  clientId: integer("client_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  amount: integer("amount").notNull(), // Total invoice dalam Rupiah
+  status: invoiceStatusEnum("status").notNull().default("draft"),
+  type: paymentTypeEnum("type").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  issueDate: timestamp("issue_date").notNull().defaultNow(),
+  paidDate: timestamp("paid_date"),
+  paidAmount: integer("paid_amount").default(0),
+  notes: text("notes"), // Catatan tambahan dari admin
+  termsAndConditions: text("terms_and_conditions"), // Syarat dan ketentuan tambahan
+  xenditInvoiceId: text("xendit_invoice_id"), // ID invoice dari Xendit
+  xenditInvoiceUrl: text("xendit_invoice_url"), // URL invoice dari Xendit
+  metadata: jsonb("metadata"), // Data tambahan seperti info pajak, diskon, dll
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Tabel untuk history pembayaran
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull().references(() => invoices.id),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  clientId: integer("client_id").notNull().references(() => users.id),
+  amount: integer("amount").notNull(),
+  method: text("method").notNull(), // bank_transfer, virtual_account, credit_card, ewallet
+  status: text("status").notNull(), // pending, success, failed, cancelled
+  paymentDate: timestamp("payment_date").notNull().defaultNow(),
+  transactionId: text("transaction_id"), // ID transaksi dari payment gateway
+  paymentProofUrl: text("payment_proof_url"), // URL bukti pembayaran jika manual
+  notes: text("notes"),
+  metadata: jsonb("metadata"), // Data tambahan dari payment gateway
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -202,6 +243,59 @@ export const updateNotificationSchema = z.object({
   isRead: z.boolean().optional(),
 });
 
+// Invoice schema
+export const insertInvoiceSchema = createInsertSchema(invoices).pick({
+  projectId: true,
+  invoiceNumber: true,
+  clientId: true,
+  title: true,
+  description: true,
+  amount: true,
+  status: true,
+  type: true,
+  dueDate: true,
+  notes: true,
+  termsAndConditions: true,
+  metadata: true,
+}).extend({
+  status: z.enum(["draft", "sent", "paid", "partial", "overdue", "cancelled"]).default("draft"),
+  type: z.enum(["dp", "final", "milestone", "full"]),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const updateInvoiceSchema = z.object({
+  id: z.number(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  amount: z.number().optional(),
+  status: z.enum(["draft", "sent", "paid", "partial", "overdue", "cancelled"]).optional(),
+  dueDate: z.date().optional(),
+  notes: z.string().optional(),
+  termsAndConditions: z.string().optional(),
+  paidDate: z.date().optional(),
+  paidAmount: z.number().optional(),
+  xenditInvoiceId: z.string().optional(),
+  xenditInvoiceUrl: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+// Payment schema
+export const insertPaymentSchema = createInsertSchema(payments).pick({
+  invoiceId: true,
+  projectId: true,
+  clientId: true,
+  amount: true,
+  method: true,
+  status: true,
+  transactionId: true,
+  paymentProofUrl: true,
+  notes: true,
+  metadata: true,
+}).extend({
+  status: z.enum(["pending", "success", "failed", "cancelled"]).default("pending"),
+  metadata: z.record(z.any()).optional(),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -209,9 +303,12 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type UpdateProject = z.infer<typeof updateProjectSchema>;
 export type UpdateMilestone = z.infer<typeof updateMilestoneSchema>;
 export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
+export type UpdateInvoice = z.infer<typeof updateInvoiceSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
@@ -219,3 +316,5 @@ export type Feedback = typeof feedback.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Milestone = typeof milestones.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
