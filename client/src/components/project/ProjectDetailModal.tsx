@@ -705,7 +705,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 {/* Project Handover Details */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-muted px-4 py-3 border-b border-border flex items-center">
-                    <File className="h-4 w-4 mr-2 text-primary" />
+                    <FileIcon className="h-4 w-4 mr-2 text-primary" />
                     <h3 className="text-sm font-medium">Dokumentasi & Kode</h3>
                   </div>
                   
@@ -749,7 +749,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-purple-100 text-purple-700 mr-3">
-                                <File className="h-4 w-4" />
+                                <FileIcon className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">Dokumentasi Teknis</p>
@@ -765,7 +765,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-green-100 text-green-700 mr-3">
-                                <File className="h-4 w-4" />
+                                <FileIcon className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">Manual Pengguna</p>
@@ -781,7 +781,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-yellow-100 text-yellow-700 mr-3">
-                                <File className="h-4 w-4" />
+                                <FileIcon className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">Source Code</p>
@@ -793,7 +793,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                       </>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
-                        <File className="h-12 w-12 mx-auto mb-3 text-muted" />
+                        <FileIcon className="h-12 w-12 mx-auto mb-3 text-muted" />
                         <p>Tidak ada dokumen handover yang ditemukan.</p>
                         <p className="text-sm">Silahkan hubungi tim developer untuk informasi lebih lanjut.</p>
                       </div>
