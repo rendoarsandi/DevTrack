@@ -970,12 +970,13 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                     rel="noopener noreferrer"
                                     className="flex items-center p-2 rounded border border-border hover:bg-muted/50 transition-colors"
                                   >
-                                    {attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
+                                    {attachment.name && attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
                                       <img 
                                         src={attachment.url} 
-                                        alt={decodeURIComponent(attachment.name)} 
-                                        className="h-5 w-5 object-cover rounded mr-2 flex-shrink-0" 
+                                        alt={attachment.name ? decodeURIComponent(attachment.name) : 'Image attachment'} 
+                                        className="h-8 w-8 object-cover rounded mr-2 flex-shrink-0" 
                                         onError={(e) => {
+                                          console.log("Image load error for:", attachment.url);
                                           e.currentTarget.src = ''; 
                                           e.currentTarget.style.display = 'none';
                                           // Mencari elemen FileIcon dengan getElementById
@@ -988,10 +989,21 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                     ) : null}
                                     <FileIcon 
                                       id={`attachment-icon-${i}`} 
-                                      className="h-3 w-3 mr-2 flex-shrink-0" 
-                                      style={{display: attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} 
+                                      className="h-4 w-4 mr-2 flex-shrink-0" 
+                                      style={{display: (attachment.name && attachment.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/)) ? 'none' : 'block'}} 
                                     />
-                                    <span className="text-xs truncate">{decodeURIComponent(attachment.name)}</span>
+                                    <span className="text-xs truncate">
+                                      {attachment.name ? 
+                                        (() => {
+                                          try {
+                                            return decodeURIComponent(attachment.name)
+                                          } catch (e) {
+                                            console.error("Error decoding filename:", e);
+                                            return attachment.name
+                                          }
+                                        })() 
+                                        : 'Attachment'}
+                                    </span>
                                   </a>
                                 ))}
                               </div>
@@ -1074,7 +1086,13 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                               {file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? (
                                 <img 
                                   src={file.url} 
-                                  alt={decodeURIComponent(file.name)} 
+                                  alt={(() => {
+                                    try {
+                                      return decodeURIComponent(file.name)
+                                    } catch (e) {
+                                      return file.name
+                                    }
+                                  })()} 
                                   className="h-7 w-7 object-cover rounded mr-2 flex-shrink-0" 
                                   onError={(e) => {
                                     // Menyembunyikan gambar jika error
@@ -1088,7 +1106,16 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                                 />
                               ) : null}
                               <FileIcon id={`file-icon-${index}`} className="h-4 w-4 mr-2 flex-shrink-0" style={{display: file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} />
-                              <span className="text-sm truncate max-w-[180px]">{decodeURIComponent(file.name)}</span>
+                              <span className="text-sm truncate max-w-[180px]">
+                                {(() => {
+                                  try {
+                                    return decodeURIComponent(file.name)
+                                  } catch (e) {
+                                    console.error("Error decoding uploaded filename:", e);
+                                    return file.name
+                                  }
+                                })()}
+                              </span>
                             </div>
                             <button
                               onClick={() => handleRemoveFile(file.url)}
