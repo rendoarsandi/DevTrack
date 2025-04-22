@@ -220,6 +220,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Project Review Routes
+  app.post("/api/projects/:id/review", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const projectId = parseInt(req.params.id);
+    if (isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+    
+    const project = await storage.getProject(projectId);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    if (project.clientId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+    
+    try {
+      // Validate project is in a reviewable state
+      if (project.status !== "under_review") {
+        return res.status(400).json({ 
+          message: "Project is not currently under review" 
+        });
+      }
+      
+      const { action, ratings, feedback } = req.body;
+      
+      if (!action || !["approve", "request_changes", "reject"].includes(action)) {
+        return res.status(400).json({ message: "Invalid review action" });
+      }
+      
+      // Determine the new status based on the action
+      const newStatus = 
+        action === "approve" ? "completed" : 
+        action === "request_changes" ? "in_progress" : 
+        "rejected";
+      
+      // Update the project status
+      const updatedProject = await storage.updateProject({
+        id: projectId,
+        status: newStatus
+      });
+      
+      // Create feedback record with the detailed review
+      const reviewFeedback = await storage.createFeedback({
+        projectId,
+        clientId: req.user.id,
+        content: feedback || `Project ${action === "approve" ? "approved" : action === "request_changes" ? "needs changes" : "rejected"}`
+      });
+      
+      // Log this as an activity
+      await storage.createActivity({
+        projectId,
+        type: "review",
+        content: `Client ${
+          action === "approve" ? "approved the project" : 
+          action === "request_changes" ? "requested changes" : 
+          "rejected the project"
+        }`
+      });
+      
+      return res.status(200).json({
+        success: true,
+        project: updatedProject,
+        feedback: reviewFeedback
+      });
+    } catch (error) {
+      console.error("Error processing project review:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Activities Routes
   app.get("/api/activities", async (req, res) => {
