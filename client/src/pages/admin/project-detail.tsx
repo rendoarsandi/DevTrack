@@ -129,8 +129,12 @@ export default function AdminProjectDetail() {
         activityContent = "Down payment received. Project development started.";
       } else if (newStatus === "under_review") {
         activityContent = "Project completed and submitted for client review.";
+      } else if (newStatus === "approved") {
+        activityContent = "Project approved by client. Awaiting final payment.";
+      } else if (newStatus === "awaiting_handover") {
+        activityContent = "Final payment received. Project files ready for handover.";
       } else if (newStatus === "completed") {
-        activityContent = "Project completed and delivered.";
+        activityContent = "Project completed and all deliverables handed over.";
       } else if (newStatus === "rejected") {
         activityContent = "Project request rejected by admin.";
       }
@@ -275,6 +279,18 @@ export default function AdminProjectDetail() {
                 )}
                 {project.status === "under_review" && (
                   <SelectItem value="under_review">Under Review</SelectItem>
+                )}
+                {project.status === "approved" && (
+                  <>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="awaiting_handover">Final Payment Received</SelectItem>
+                  </>
+                )}
+                {project.status === "awaiting_handover" && (
+                  <>
+                    <SelectItem value="awaiting_handover">Awaiting Handover</SelectItem>
+                    <SelectItem value="completed">Complete Handover</SelectItem>
+                  </>
                 )}
                 {project.status === "completed" && (
                   <SelectItem value="completed">Completed</SelectItem>
@@ -546,6 +562,12 @@ export default function AdminProjectDetail() {
               <TabsTrigger value="review" className="flex items-center">
                 <ClipboardList className="mr-2 h-4 w-4" />
                 Review
+              </TabsTrigger>
+            )}
+            {project.status === "awaiting_handover" && (
+              <TabsTrigger value="handover" className="flex items-center">
+                <File className="mr-2 h-4 w-4" />
+                Handover
               </TabsTrigger>
             )}
           </TabsList>
@@ -841,6 +863,123 @@ export default function AdminProjectDetail() {
                   });
                 }} 
               />
+            </TabsContent>
+          )}
+          
+          {/* Project Handover Tab - Only shown for projects awaiting handover */}
+          {project.status === "awaiting_handover" && (
+            <TabsContent value="handover" className="space-y-4">
+              <Card>
+                <CardHeader className="space-y-1">
+                  <CardTitle className="flex items-center">
+                    <File className="h-5 w-5 mr-2 text-orange-600" />
+                    <span>Project Handover</span>
+                  </CardTitle>
+                  <p className="text-muted-foreground">
+                    Client has completed final payment. Provide all project deliverables and documentation.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <form className="space-y-6" onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.target as HTMLFormElement;
+                    const handoverMessage = (form.elements.namedItem('handoverMessage') as HTMLTextAreaElement).value;
+                    
+                    if (!handoverMessage.trim()) {
+                      toast({
+                        title: "Error",
+                        description: "Please provide handover instructions",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    // Submit handover feedback
+                    apiRequest("POST", `/api/projects/${id}/feedback`, {
+                      content: `PROJECT HANDOVER: ${handoverMessage}`,
+                    }).then(() => {
+                      // Update project status to completed
+                      updateProjectMutation.mutate({
+                        status: "completed",
+                        progress: 100
+                      });
+                      
+                      toast({
+                        title: "Handover Complete",
+                        description: "All project deliverables have been sent to the client",
+                      });
+                    });
+                  }}>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                        <h3 className="text-sm font-medium text-amber-800 mb-2">Project Handover Checklist</h3>
+                        <ul className="text-sm text-amber-700 space-y-2">
+                          <li className="flex items-start">
+                            <CheckCircle2 className="h-5 w-5 mr-2 shrink-0 text-amber-600" />
+                            <span>Source code repository access (GitHub, GitLab, etc.)</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="h-5 w-5 mr-2 shrink-0 text-amber-600" />
+                            <span>Technical documentation including setup instructions</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="h-5 w-5 mr-2 shrink-0 text-amber-600" />
+                            <span>Administrator credentials and access details</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="h-5 w-5 mr-2 shrink-0 text-amber-600" />
+                            <span>API documentation (if applicable)</span>
+                          </li>
+                          <li className="flex items-start">
+                            <CheckCircle2 className="h-5 w-5 mr-2 shrink-0 text-amber-600" />
+                            <span>User manual or usage instructions</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label htmlFor="handoverMessage">Handover Instructions</Label>
+                        <Textarea 
+                          id="handoverMessage" 
+                          placeholder="Provide detailed instructions for the client to access and use their deliverables. Include repository URLs, credentials, documentation links, and any other relevant information..."
+                          rows={8}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label>Upload Final Deliverables</Label>
+                        <div className="border border-dashed border-border rounded-md p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
+                          <input type="file" className="hidden" id="deliverables-upload" multiple />
+                          <label htmlFor="deliverables-upload" className="cursor-pointer block">
+                            <span className="block mb-2">
+                              <File className="h-6 w-6 mx-auto text-muted-foreground" />
+                            </span>
+                            <span className="text-sm font-medium">Click to upload files</span>
+                            <span className="text-xs text-muted-foreground block mt-1">
+                              ZIP, PDF, DOC up to 50MB
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={updateProjectMutation.isPending}>
+                          {updateProjectMutation.isPending ? (
+                            <span className="mr-2">
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            </span>
+                          ) : null}
+                          Complete Handover
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
         </Tabs>
