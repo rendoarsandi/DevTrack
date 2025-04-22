@@ -137,6 +137,33 @@ export default function AdminDashboard() {
     },
   ];
 
+  // Halaman fallback jika terjadi error fatal
+  if (projectFetchError && typeof projectFetchError === 'string' && (projectFetchError.includes("401") || projectFetchError.includes("Unauthorized"))) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 text-destructive">
+              <AlertTriangle className="h-8 w-8" />
+              <h1 className="text-xl font-bold">Login Required</h1>
+            </div>
+            <p className="text-muted-foreground">
+              You need to log in with an admin account to access this page.
+            </p>
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => window.location.href = '/auth'}
+                className="bg-primary text-white"
+              >
+                Go to Login
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">
