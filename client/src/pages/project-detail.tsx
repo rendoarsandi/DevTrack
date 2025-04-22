@@ -59,42 +59,9 @@ export default function ProjectDetail() {
   // Show review components conditionally based on project status
   const shouldShowReviewComponents = project.status === "in_progress" || project.status === "under_review";
   
-  // Mutation for submitting project for review
+  // Dalam workflow otomatis, client tidak boleh submit project untuk review
+  // Hanya admin yang dapat mengubah status project
   const { toast } = useToast();
-  const submitForReviewMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest(
-        "PATCH",
-        `/api/projects/${projectId}`,
-        { status: "under_review" }
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Project submitted for review",
-        description: "The development team has been notified and will review your project shortly."
-      });
-      
-      // Create activity log for the submission
-      apiRequest("POST", `/api/projects/${projectId}/activities`, {
-        type: "status_change",
-        content: "Project submitted for review"
-      });
-      
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({
-        queryKey: [`/api/projects/${projectId}`],
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit project for review",
-        variant: "destructive"
-      });
-    }
-  });
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -223,34 +190,8 @@ export default function ProjectDetail() {
                     </TabsContent>
                   </Tabs>
                   
-                  {/* Submission button (only when in progress) */}
-                  {project.status === "in_progress" && (
-                    <div className="mt-6">
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        variant="default"
-                        onClick={() => submitForReviewMutation.mutate()}
-                        disabled={submitForReviewMutation.isPending}
-                      >
-                        {submitForReviewMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <Rocket className="mr-2 h-5 w-5" />
-                            Submit Project for Review
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2 text-center">
-                        Before submitting, make sure all checklist items are completed 
-                        and testing documentation is provided.
-                      </p>
-                    </div>
-                  )}
+                  {/* Dalam workflow otomatis, client tidak lagi perlu submit project untuk review
+                     Status proyek diubah oleh admin saat development selesai */}
                 </div>
               </div>
             </div>

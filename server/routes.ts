@@ -247,15 +247,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Determine the new status based on the action
-      const newStatus = 
-        action === "approve" ? "completed" : 
-        action === "request_changes" ? "in_progress" : 
-        "rejected";
+      let newStatus;
+      let paymentStatus = project.paymentStatus;
+      
+      if (action === "approve") {
+        // Jika di-approve, status berubah ke awaiting final payment
+        newStatus = "awaiting_dp"; // Status sementara menunggu pembayaran final
+        paymentStatus = 50; // Menandakan perlu pembayaran final 50%
+      } else if (action === "request_changes") {
+        // Jika ada request changes, kembali ke in_progress
+        newStatus = "in_progress";
+      } else {
+        // Jika ditolak
+        newStatus = "rejected";
+      }
       
       // Update the project status
       const updatedProject = await storage.updateProject({
         id: projectId,
-        status: newStatus
+        status: newStatus,
+        paymentStatus: paymentStatus
       });
       
       // Create feedback record with the detailed review
@@ -269,9 +280,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId,
         type: "review",
         content: `Client ${
-          action === "approve" ? "approved the project" : 
-          action === "request_changes" ? "requested changes" : 
-          "rejected the project"
+          action === "approve" ? "approved the project. Final payment required." : 
+          action === "request_changes" ? "requested changes to the project." : 
+          "rejected the project."
         }`
       });
       
