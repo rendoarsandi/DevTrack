@@ -205,7 +205,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
       // Show success message
       toast({
         title: "Project accepted!",
-        description: "The project has been accepted. Please make the final payment to receive project documents/code."
+        description: "The project has been accepted and completed successfully!"
       });
       
       // Close the modal

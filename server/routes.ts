@@ -349,11 +349,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update status proyek ke approved
+      // Update status proyek ke completed (sebagai pengganti approved)
       const updatedProject = await db
         .update(projects)
         .set({
-          status: "approved",
+          status: "completed",
           progress: 90
         })
         .where(eq(projects.id, projectId))
