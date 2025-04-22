@@ -425,7 +425,7 @@ export default function AdminProjectDetail() {
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Attachments</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Array.isArray(project.attachments) && project.attachments.length > 0 && project.attachments.map((attachment: unknown, index: number) => {
+                  {Array.isArray(project.attachments) && project.attachments.length > 0 && project.attachments.map((attachment: any, index: number) => {
                     // Handle different attachment formats (string or object)
                     const attachmentName = typeof attachment === 'string' 
                       ? attachment 
