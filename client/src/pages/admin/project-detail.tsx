@@ -79,20 +79,69 @@ export default function AdminProjectDetail() {
       status: string, 
       adminFeedback?: string,
       quote?: number,
-      timeline?: number
+      timeline?: number,
+      paymentStatus?: number,
+      progress?: number
     }) => {
+      // Auto-calculate payment status and progress based on status
+      let updatedData = {...data};
+      
+      if (data.status === "awaiting_dp" && !data.paymentStatus) {
+        updatedData.paymentStatus = 0; // Menunggu Down Payment
+        updatedData.progress = 10;
+      } 
+      else if (data.status === "in_progress" && !data.paymentStatus) {
+        updatedData.paymentStatus = 50; // DP sudah dibayar (50%)
+        updatedData.progress = 30;
+      }
+      else if (data.status === "under_review" && !data.paymentStatus) {
+        updatedData.progress = 80; // Project hampir selesai
+      }
+      else if (data.status === "completed" && !data.paymentStatus) {
+        updatedData.paymentStatus = 100; // Full payment completed
+        updatedData.progress = 100;
+      }
+      else if (data.status === "rejected") {
+        updatedData.paymentStatus = 0;
+        updatedData.progress = 0;
+      }
+      
       const response = await apiRequest(
         "PATCH", 
         `/api/admin/projects/${id}`, 
-        data
+        updatedData
       );
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Status updated",
         description: "Project status has been updated successfully",
       });
+      
+      // Catat perubahan sebagai activity
+      const newStatus = data.status;
+      let activityContent = "";
+      
+      if (newStatus === "awaiting_dp") {
+        activityContent = "Project approved by admin. Down payment required.";
+      } else if (newStatus === "in_progress") {
+        activityContent = "Down payment received. Project development started.";
+      } else if (newStatus === "under_review") {
+        activityContent = "Project completed and submitted for client review.";
+      } else if (newStatus === "completed") {
+        activityContent = "Project completed and delivered.";
+      } else if (newStatus === "rejected") {
+        activityContent = "Project request rejected by admin.";
+      }
+      
+      // Jika ada perubahan status, catat sebagai activity
+      if (activityContent) {
+        apiRequest("POST", `/api/projects/${id}/activities`, {
+          type: "status_change",
+          content: activityContent
+        });
+      }
       
       queryClient.invalidateQueries({
         queryKey: [`/api/admin/projects/${id}`],

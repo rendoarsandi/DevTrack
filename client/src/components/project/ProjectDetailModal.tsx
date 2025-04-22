@@ -70,22 +70,66 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
 
   const updatePaymentStatusMutation = useMutation({
     mutationFn: async (paymentStatus: number) => {
+      // Melakukan update pembayaran dan membuat activity log
       const res = await apiRequest(
         "PATCH", 
         `/api/projects/${projectId}`, 
         { paymentStatus }
       );
+      
+      // Buat activity log untuk payment
+      let activityContent = "";
+      if (paymentStatus === 50) {
+        activityContent = "Down payment (50%) has been paid.";
+      } else if (paymentStatus === 100) {
+        activityContent = "Full payment completed.";
+      }
+      
+      if (activityContent) {
+        await apiRequest("POST", `/api/projects/${projectId}/activities`, {
+          type: "payment",
+          content: activityContent
+        });
+      }
+      
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/activities`] });
       queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
-      toast({
-        title: "Payment status updated",
-        description: "Your payment has been processed successfully."
-      });
+      
+      // Jika ini adalah down payment (50%), otomatis ubah status ke in_progress
+      if (data.paymentStatus === 50 && data.status === "awaiting_dp") {
+        // Update status proyek
+        apiRequest("PATCH", `/api/projects/${projectId}`, {
+          status: "in_progress"
+        });
+        
+        toast({
+          title: "Payment processed & project started",
+          description: "Your down payment has been received. The development team will begin work on your project immediately."
+        });
+      } 
+      // Jika ini adalah full payment (100%), otomatis ubah status ke completed
+      else if (data.paymentStatus === 100) {
+        // Update status proyek
+        apiRequest("PATCH", `/api/projects/${projectId}`, {
+          status: "completed"
+        });
+        
+        toast({
+          title: "Final payment completed",
+          description: "Your project is now completed. All project documentation and deliverables are available."
+        });
+      }
+      else {
+        toast({
+          title: "Payment status updated",
+          description: "Your payment has been processed successfully."
+        });
+      }
     }
   });
 
