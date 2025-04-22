@@ -273,10 +273,19 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
   // Function to handle project acceptance using dedicated endpoint
   const handleAcceptProject = async () => {
     try {
-      // Get message if user provided any
-      const message = feedbackContent.trim() 
+      // Prepare message
+      let message = feedbackContent.trim() 
         ? feedbackContent
         : "Project accepted. Thank you for your excellent work!";
+      
+      // Add attachments info if any
+      if (uploadedFiles.length > 0) {
+        const attachmentsList = uploadedFiles.map(file => 
+          `[Attachment: ${file.name}](${file.url})`
+        ).join('\n');
+        
+        message = `${message}\n\n${attachmentsList}`;
+      }
         
       // Use new dedicated endpoint for accepting project
       const response = await apiRequest("POST", `/api/projects/${projectId}/accept`, {
@@ -303,6 +312,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         description: "The project has been accepted and completed successfully!"
       });
       
+      // Reset state
+      setUploadedFiles([]);
+      
       // Close the modal
       onClose();
     } catch (error) {
@@ -328,9 +340,21 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
     }
     
     try {
+      // Prepare message with attachments
+      let message = feedbackContent.trim();
+      
+      // Add attachments info if any
+      if (uploadedFiles.length > 0) {
+        const attachmentsList = uploadedFiles.map(file => 
+          `[Attachment: ${file.name}](${file.url})`
+        ).join('\n');
+        
+        message = `${message}\n\n${attachmentsList}`;
+      }
+      
       // Use new dedicated endpoint for requesting changes
       const response = await apiRequest("POST", `/api/projects/${projectId}/request-changes`, {
-        message: feedbackContent.trim()
+        message: message
       });
       
       // Check if request was successful
@@ -352,6 +376,9 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         title: "Changes requested",
         description: "The development team will revise the project based on your feedback"
       });
+      
+      // Reset state
+      setUploadedFiles([]);
       
       // Close the modal
       onClose();
@@ -722,6 +749,62 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 value={feedbackContent}
                 onChange={(e) => setFeedbackContent(e.target.value)}
               />
+              
+              {/* File upload area */}
+              <div className="border border-dashed border-border rounded-md p-3 bg-muted/30">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-medium">Attachments</h4>
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      id="file-upload-message" 
+                      multiple
+                      onChange={handleFileUpload}
+                      accept="image/*,application/pdf"
+                    />
+                    <label 
+                      htmlFor="file-upload-message" 
+                      className="inline-flex items-center px-2 py-1 border border-border rounded-md bg-muted/50 hover:bg-muted cursor-pointer text-xs"
+                    >
+                      {isUploading ? (
+                        <Loader2Icon className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <FileIcon className="h-3 w-3 mr-1" />
+                      )}
+                      {isUploading ? "Uploading..." : "Add Files"}
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Display uploaded files */}
+                {uploadedFiles.length > 0 ? (
+                  <ul className="space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                      <li key={index} className="flex items-center justify-between bg-muted/50 rounded-md p-2">
+                        <div className="flex items-center overflow-hidden">
+                          <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="text-sm truncate">{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveFile(file.url)}
+                          className="text-red-500 hover:text-red-700 flex-shrink-0 ml-2"
+                          aria-label="Remove file"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    No files attached. You can add screenshots or documents to your message.
+                  </p>
+                )}
+              </div>
+              
               <Button 
                 onClick={handleSubmitFeedback}
                 disabled={submitFeedbackMutation.isPending}
@@ -744,14 +827,69 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   </div>
                 ) : feedbacks && feedbacks.length > 0 ? (
                   <ul className="space-y-3 mt-2">
-                    {feedbacks.map((feedback, index) => (
-                      <li key={index} className="p-3 border border-border rounded-md">
-                        <p className="text-sm">{feedback.content}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
-                        </p>
-                      </li>
-                    ))}
+                    {feedbacks.map((feedback, index) => {
+                      // Periksa apakah pesan berisi tautan lampiran dengan format [Attachment: name](url)
+                      const hasAttachments = feedback.content.includes('[Attachment:');
+                      
+                      // Pisahkan konten pesan utama dan lampiran
+                      let mainContent = feedback.content;
+                      const attachments: Array<{name: string, url: string}> = [];
+                      
+                      if (hasAttachments) {
+                        // Pisahkan konten pesan dan lampiran
+                        const parts = feedback.content.split('\n\n');
+                        mainContent = parts[0];
+                        
+                        // Ekstrak semua lampiran jika ada
+                        if (parts.length > 1) {
+                          const attachmentText = parts.slice(1).join('\n\n');
+                          // Gunakan regex normal untuk mencocokkan semua attachment
+                          const regex = /\[Attachment: (.+?)\]\((.+?)\)/g;
+                          let match;
+                          
+                          // Gunakan exec dalam loop untuk mendapatkan semua matches
+                          while ((match = regex.exec(attachmentText)) !== null) {
+                            if (match[1] && match[2]) {
+                              attachments.push({
+                                name: match[1],
+                                url: match[2]
+                              });
+                            }
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <li key={index} className="p-3 border border-border rounded-md">
+                          <p className="text-sm whitespace-pre-wrap">{mainContent}</p>
+                          
+                          {/* Tampilkan lampiran jika ada */}
+                          {attachments.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-border">
+                              <p className="text-xs font-medium mb-2">Attachments:</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {attachments.map((attachment, i) => (
+                                  <a 
+                                    key={i}
+                                    href={attachment.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center p-2 rounded border border-border hover:bg-muted/50 transition-colors"
+                                  >
+                                    <FileIcon className="h-3 w-3 mr-2 flex-shrink-0" />
+                                    <span className="text-xs truncate">{attachment.name}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
+                          </p>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground">No messages yet. Start a conversation with the development team.</p>
