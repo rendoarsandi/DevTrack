@@ -13,6 +13,9 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Setup file upload routes
+  setupFileUpload(app);
 
   // Projects Routes
   app.get("/api/projects", async (req, res) => {

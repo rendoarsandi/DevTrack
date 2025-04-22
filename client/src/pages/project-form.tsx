@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { useForm } from "react-hook-form";
@@ -29,12 +30,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { FileUpload, type FileWithPreview } from "@/components/ui/file-upload";
 
 const projectSchema = insertProjectSchema.omit({ clientId: true }).extend({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   quote: z.coerce.number().min(100, "Quote must be at least $100"),
   timeline: z.coerce.number().min(1, "Timeline must be at least 1 week"),
+  attachments: z.array(z.object({
+    name: z.string(),
+    filename: z.string(),
+    type: z.string(),
+    size: z.number(),
+    url: z.string(),
+  })).optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -42,6 +51,8 @@ type ProjectFormValues = z.infer<typeof projectSchema>;
 export default function ProjectForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -50,6 +61,28 @@ export default function ProjectForm() {
       description: "",
       quote: undefined,
       timeline: undefined,
+      attachments: [],
+    },
+  });
+
+  const uploadFilesMutation = useMutation({
+    mutationFn: async (files: FileWithPreview[]) => {
+      if (!files.length) return [];
+      
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to upload files');
+      }
+      
+      return res.json();
     },
   });
 
@@ -75,8 +108,28 @@ export default function ProjectForm() {
     },
   });
 
-  function onSubmit(data: ProjectFormValues) {
-    createProjectMutation.mutate(data);
+  async function onSubmit(data: ProjectFormValues) {
+    try {
+      // Handle file uploads if there are any
+      if (files.length > 0) {
+        setIsUploading(true);
+        const uploadedFiles = await uploadFilesMutation.mutateAsync(files);
+        setIsUploading(false);
+        
+        // Add the uploaded files to the form data
+        data.attachments = uploadedFiles;
+      }
+      
+      // Submit the project with any uploaded files
+      createProjectMutation.mutate(data);
+    } catch (error) {
+      setIsUploading(false);
+      toast({
+        title: "Error uploading files",
+        description: error instanceof Error ? error.message : "There was an error uploading your files. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -199,13 +252,34 @@ export default function ProjectForm() {
                         />
                       </div>
                       
+                      <div className="mt-6">
+                        <FormItem>
+                          <FormLabel>Reference Materials</FormLabel>
+                          <FileUpload
+                            value={files}
+                            onChange={setFiles}
+                            maxFiles={5}
+                            maxSize={5}
+                            accept="image/*,video/*,application/pdf"
+                          />
+                          <FormDescription>
+                            Upload screenshots, mockups, or other visual references for your project
+                          </FormDescription>
+                        </FormItem>
+                      </div>
+                      
                       <CardFooter className="px-0 pt-6">
                         <Button 
                           type="submit" 
-                          disabled={createProjectMutation.isPending}
+                          disabled={createProjectMutation.isPending || isUploading}
                           className="ml-auto"
                         >
-                          {createProjectMutation.isPending ? (
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading files...
+                            </>
+                          ) : createProjectMutation.isPending ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Submitting...
