@@ -14,7 +14,9 @@ import {
   CircleIcon, 
   GitPullRequest,
   Loader2 as Loader2Icon,
-  ClipboardCheck
+  ClipboardCheck,
+  FileIcon,
+  MessageSquare
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Project, Activity, Feedback } from "@shared/schema";
@@ -348,7 +350,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                 value="deliverables" 
                 className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
               >
-                <File className="mr-2 h-4 w-4" />
+                <FileIcon className="mr-2 h-4 w-4" />
                 Deliverables
               </TabsTrigger>
             )}
@@ -677,6 +679,145 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
                   >
                     Terima Proyek
                   </Button>
+                </div>
+              </div>
+            </TabsContent>
+          )}
+          
+          {/* Deliverables tab - hanya ditampilkan untuk proyek yang sudah selesai */}
+          {project.status === "completed" && (
+            <TabsContent value="deliverables" className="space-y-4 mt-0">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-md mb-4">
+                <div className="flex items-start">
+                  <div className="mr-3 mt-1">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-green-800 mb-2">Proyek Selesai</h3>
+                    <p className="text-green-700 mb-2">
+                      Selamat! Proyek Anda telah selesai dan semua dokumen serta kode telah dikirimkan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Project Handover Details */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted px-4 py-3 border-b border-border flex items-center">
+                    <File className="h-4 w-4 mr-2 text-primary" />
+                    <h3 className="text-sm font-medium">Dokumentasi & Kode</h3>
+                  </div>
+                  
+                  <div className="p-4 space-y-4">
+                    {/* Find handover message in feedback */}
+                    {feedbacks && feedbacks.filter(f => f.content.startsWith("PROJECT HANDOVER:")).length > 0 ? (
+                      <>
+                        <div className="whitespace-pre-wrap p-4 bg-muted/50 rounded-md text-sm">
+                          {feedbacks
+                            .filter(f => f.content.startsWith("PROJECT HANDOVER:"))
+                            .slice(-1)[0]
+                            .content
+                            .replace("PROJECT HANDOVER:", "")
+                            .trim()}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Dokumen & File</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {/* Repository */}
+                            <a 
+                              href="#" 
+                              className="flex items-center p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <div className="p-2 rounded-full bg-blue-100 text-blue-700 mr-3">
+                                <GitPullRequest className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Repository Kode</p>
+                                <p className="text-xs text-muted-foreground">GitHub Repository</p>
+                              </div>
+                            </a>
+                            
+                            {/* Documentation */}
+                            <a 
+                              href="#" 
+                              className="flex items-center p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <div className="p-2 rounded-full bg-purple-100 text-purple-700 mr-3">
+                                <File className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Dokumentasi Teknis</p>
+                                <p className="text-xs text-muted-foreground">PDF Documentation</p>
+                              </div>
+                            </a>
+                            
+                            {/* User Manual */}
+                            <a 
+                              href="#" 
+                              className="flex items-center p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <div className="p-2 rounded-full bg-green-100 text-green-700 mr-3">
+                                <File className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Manual Pengguna</p>
+                                <p className="text-xs text-muted-foreground">PDF User Guide</p>
+                              </div>
+                            </a>
+                            
+                            {/* Source Code */}
+                            <a 
+                              href="#" 
+                              className="flex items-center p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <div className="p-2 rounded-full bg-yellow-100 text-yellow-700 mr-3">
+                                <File className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Source Code</p>
+                                <p className="text-xs text-muted-foreground">ZIP Archive</p>
+                              </div>
+                            </a>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <File className="h-12 w-12 mx-auto mb-3 text-muted" />
+                        <p>Tidak ada dokumen handover yang ditemukan.</p>
+                        <p className="text-sm">Silahkan hubungi tim developer untuk informasi lebih lanjut.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted px-4 py-3 border-b border-border">
+                    <h3 className="text-sm font-medium">Support & Bantuan</h3>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Jika Anda membutuhkan bantuan tambahan atau memiliki pertanyaan tentang proyek yang telah diselesaikan, 
+                      silahkan hubungi kami melalui form pesan di tab Messages.
+                    </p>
+                    <Button
+                      onClick={() => setActiveTab("feedback")}
+                      className="w-full"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Kirim Pesan Support
+                    </Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>
