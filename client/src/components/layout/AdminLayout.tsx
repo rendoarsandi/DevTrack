@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { NotificationDropdown } from "@/components/notification/NotificationDropdown";
 
 interface NavItemProps {
   href: string;
@@ -178,71 +179,74 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <h1 className="ml-2 text-xl font-semibold">Admin Panel</h1>
           </div>
           
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b">
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                      <span className="text-primary-foreground font-semibold text-lg">PM</span>
-                    </div>
-                    <h1 className="ml-2 text-xl font-semibold">Admin Panel</h1>
-                  </div>
-                </div>
-                
-                <nav className="flex-1 p-4">
-                  <ul className="space-y-1">
-                    {navigationItems.map((item) => (
-                      <NavItem
-                        key={item.href}
-                        href={item.href}
-                        icon={item.icon}
-                        active={item.active}
-                        onClick={closeMenu}
-                      >
-                        {item.label}
-                      </NavItem>
-                    ))}
-                  </ul>
-                  
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm font-medium">Appearance</span>
-                      <ThemeToggle />
-                    </div>
-                  </div>
-                </nav>
-                
-                <div className="p-4 border-t mt-auto">
-                  <div className="flex items-center mb-3">
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarFallback className="bg-primary/20 text-primary">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start text-sm">
-                      <p className="font-medium">{user?.fullName || "Admin"}</p>
-                      <p className="text-muted-foreground text-xs">{user?.email}</p>
+          <div className="flex items-center space-x-1">
+            <NotificationDropdown />
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0">
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-primary-foreground font-semibold text-lg">PM</span>
+                      </div>
+                      <h1 className="ml-2 text-xl font-semibold">Admin Panel</h1>
                     </div>
                   </div>
                   
-                  <Button 
-                    variant="destructive" 
-                    className="w-full" 
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
+                  <nav className="flex-1 p-4">
+                    <ul className="space-y-1">
+                      {navigationItems.map((item) => (
+                        <NavItem
+                          key={item.href}
+                          href={item.href}
+                          icon={item.icon}
+                          active={item.active}
+                          onClick={closeMenu}
+                        >
+                          {item.label}
+                        </NavItem>
+                      ))}
+                    </ul>
+                    
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm font-medium">Appearance</span>
+                        <ThemeToggle />
+                      </div>
+                    </div>
+                  </nav>
+                  
+                  <div className="p-4 border-t mt-auto">
+                    <div className="flex items-center mb-3">
+                      <Avatar className="h-8 w-8 mr-2">
+                        <AvatarFallback className="bg-primary/20 text-primary">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col items-start text-sm">
+                        <p className="font-medium">{user?.fullName || "Admin"}</p>
+                        <p className="text-muted-foreground text-xs">{user?.email}</p>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="destructive" 
+                      className="w-full" 
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
 

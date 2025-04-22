@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
+import { NotificationDropdown } from "@/components/notification/NotificationDropdown";
 
 interface NavItemProps {
   href: string;
@@ -58,8 +59,9 @@ export function Sidebar() {
 
   return (
     <div className="hidden md:flex md:w-64 flex-col fixed inset-y-0 border-r border-border bg-card">
-      <div className="flex items-center h-16 px-4 border-b border-border">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-border">
         <span className="font-heading font-bold text-xl text-primary">DevTrack</span>
+        <NotificationDropdown />
       </div>
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pt-5 pb-4">
         <nav className="flex-1 px-2 space-y-1">
