@@ -26,33 +26,64 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
+  // Coba untuk mengambil tema dari localStorage
+  const storedTheme = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+  
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => (storedTheme as Theme) || defaultTheme
   )
-
+  
+  // Efek untuk mengatur kelas tema pada elemen root
   useEffect(() => {
     const root = window.document.documentElement
-
+    
+    // Hapus kelas tema yang ada
     root.classList.remove("light", "dark")
-
+    
+    let activeTheme = theme
+    
+    // Jika tema 'system', gunakan preferensi sistem pengguna
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
+      activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
     }
-
-    root.classList.add(theme)
-  }, [theme])
-
+    
+    // Tambahkan kelas tema yang sesuai
+    root.classList.add(activeTheme)
+    
+    // Tambahkan data-theme attribute untuk komponen yang menggunakannya
+    root.setAttribute("data-theme", activeTheme)
+    
+    // Juga pastikan mode pada localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, theme)
+    }
+  }, [theme, storageKey])
+  
+  // Mendengarkan perubahan preferensi sistem jika tema 'system'
+  useEffect(() => {
+    if (theme !== "system") return;
+    
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      const root = window.document.documentElement;
+      const systemTheme = mediaQuery.matches ? "dark" : "light";
+      
+      root.classList.remove("light", "dark");
+      root.classList.add(systemTheme);
+      root.setAttribute("data-theme", systemTheme);
+    };
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme]);
+  
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (newTheme: Theme) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(storageKey, newTheme);
+      }
+      setTheme(newTheme);
     },
   }
 
