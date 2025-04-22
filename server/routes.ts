@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupFileUpload } from "./upload";
@@ -13,6 +14,7 @@ import {
   projects, activities, insertActivitySchema
 } from "@shared/schema";
 import { z } from "zod";
+import { parse } from "url";
 
 
 // Middleware to ensure user is an admin
@@ -684,6 +686,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws'
+  });
+  
+  // Store clients by project
+  interface ChatClient {
+    ws: WebSocket;
+    user: {
+      id: number | string;
+      username: string;
+      role: string;
+    };
+    projectId: number;
+  }
+  
+  const clients: ChatClient[] = [];
+  
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket connection established');
+    
+    // Parse query parameters
+    const { query } = parse(req.url || '', true);
+    const userString = query.user as string;
+    const projectIdString = query.projectId as string;
+    
+    if (!userString || !projectIdString) {
+      console.log('Missing user or projectId in query params');
+      ws.close();
+      return;
+    }
+    
+    try {
+      const user = JSON.parse(userString);
+      const projectId = parseInt(projectIdString);
+      
+      if (!user.id || !user.username || !user.role || isNaN(projectId)) {
+        console.log('Invalid user data or projectId');
+        ws.close();
+        return;
+      }
+      
+      // Add client to clients list
+      const client: ChatClient = {
+        ws,
+        user,
+        projectId
+      };
+      
+      clients.push(client);
+      
+      // Send system message to confirm connection
+      const systemMessage = {
+        type: 'system',
+        content: `${user.role === 'admin' ? 'Admin' : 'Client'} ${user.username} has joined the chat`,
+        timestamp: new Date().toISOString(),
+        sender: {
+          id: 'system',
+          username: 'System',
+          role: 'system'
+        },
+        projectId
+      };
+      
+      // Broadcast to all clients in this project
+      broadcastToProject(projectId, systemMessage);
+      
+      // Listen for messages
+      ws.on('message', (messageData) => {
+        try {
+          const parsedData = JSON.parse(messageData.toString());
+          if (!parsedData.content) return;
+          
+          const message = {
+            type: 'chat',
+            content: parsedData.content,
+            timestamp: new Date().toISOString(),
+            sender: user,
+            projectId
+          };
+          
+          // Log to database as feedback
+          try {
+            // Store in database asynchronously - don't wait for result
+            storage.createFeedback({
+              projectId,
+              content: `CHAT: ${user.username} (${user.role}): ${parsedData.content}`
+            }).catch(err => console.error('Error storing chat message:', err));
+          } catch (e) {
+            console.error('Error creating feedback record:', e);
+          }
+          
+          // Broadcast message to all clients in this project
+          broadcastToProject(projectId, message);
+        } catch (e) {
+          console.error('Error processing message:', e);
+        }
+      });
+      
+      // Handle disconnection
+      ws.on('close', () => {
+        console.log(`Client disconnected: ${user.username}`);
+        // Remove client from list
+        const index = clients.findIndex(c => 
+          c.ws === ws && 
+          c.user.id === user.id && 
+          c.projectId === projectId
+        );
+        
+        if (index !== -1) {
+          clients.splice(index, 1);
+          
+          // Send system message about disconnection
+          const disconnectMessage = {
+            type: 'system',
+            content: `${user.role === 'admin' ? 'Admin' : 'Client'} ${user.username} has left the chat`,
+            timestamp: new Date().toISOString(),
+            sender: {
+              id: 'system',
+              username: 'System',
+              role: 'system'
+            },
+            projectId
+          };
+          
+          broadcastToProject(projectId, disconnectMessage);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error parsing connection parameters:', error);
+      ws.close();
+    }
+  });
+  
+  // Function to broadcast to all clients in a specific project
+  function broadcastToProject(projectId: number, message: any) {
+    const projectClients = clients.filter(client => client.projectId === projectId);
+    const messageStr = JSON.stringify(message);
+    
+    projectClients.forEach(client => {
+      if (client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(messageStr);
+      }
+    });
+  }
   
   return httpServer;
 }
