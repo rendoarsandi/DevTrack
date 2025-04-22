@@ -22,9 +22,9 @@ interface NavItemProps {
 const NavItem = ({ href, icon, children, active }: NavItemProps) => {
   return (
     <Link href={href}>
-      <a
+      <button
         className={cn(
-          "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+          "flex items-center w-full text-left px-3 py-2 text-sm font-medium rounded-md",
           active
             ? "bg-primary text-white"
             : "text-foreground hover:bg-muted"
@@ -32,7 +32,7 @@ const NavItem = ({ href, icon, children, active }: NavItemProps) => {
       >
         <div className="w-5 h-5 mr-2">{icon}</div>
         {children}
-      </a>
+      </button>
     </Link>
   );
 };
