@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { 
   ArrowRight, 
   Code, 
@@ -14,13 +14,52 @@ import {
   Menu,
   X,
   Moon,
-  Sun
+  Sun,
+  LayoutDashboard,
+  User,
+  LogOut,
+  Bell
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useNotifications } from "@/hooks/use-notifications";
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>("light");
+  const { user, logoutMutation } = useAuth();
+  const [location, navigate] = useLocation();
+  const { data: notifications = [] } = useNotifications();
+  
+  // Count unread notifications
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user || !user.fullName) return "U";
+    return user.fullName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+  
+  // Handle logout
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   
   // Initialize theme based on user preference or system preference
   useEffect(() => {
@@ -81,18 +120,8 @@ export default function LandingPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </button>
+            {/* Theme Toggle - Now using the component */}
+            <ThemeToggle />
             
             {/* Mobile Menu Toggle */}
             <button 
@@ -107,19 +136,110 @@ export default function LandingPage() {
               )}
             </button>
             
-            {/* Auth Buttons - Hidden on smallest screens */}
-            <div className="hidden sm:flex space-x-3">
-              <Link href="/auth">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/auth">
-                <Button size="sm">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
+            {user ? (
+              /* User is logged in - Show dashboard access */
+              <div className="hidden sm:flex items-center space-x-3">
+                {/* Notifications Icon with Badge */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <Badge 
+                          className="absolute -top-1 -right-1 px-1 min-w-[18px] h-[18px] text-[10px] flex items-center justify-center"
+                          variant="destructive"
+                        >
+                          {unreadCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 p-2">
+                    <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {notifications.length > 0 ? (
+                      notifications.slice(0, 5).map((notification) => (
+                        <DropdownMenuItem key={notification.id} className="p-3">
+                          <div className="flex flex-col space-y-1">
+                            <span className="font-medium text-sm">{notification.title}</span>
+                            <span className="text-xs text-muted-foreground">{notification.content}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <div className="py-3 px-2 text-center text-sm text-muted-foreground">
+                        Tidak ada notifikasi
+                      </div>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/dashboard">
+                        <div className="w-full text-center text-sm text-primary font-medium">
+                          Lihat Semua Notifikasi
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                {/* Dashboard Button */}
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden md:inline-block">{user.username}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">
+                        <User className="h-4 w-4 mr-2" />
+                        Profil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              /* User is not logged in - Show auth buttons */
+              <div className="hidden sm:flex space-x-3">
+                <Link href="/auth">
+                  <Button variant="outline" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth">
+                  <Button size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
         
