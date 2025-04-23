@@ -58,16 +58,33 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
       
       if (response.ok) {
         setVerified(true);
+        
+        // Tampilkan toast sukses dengan desain yang lebih menonjol
         toast({
-          title: "Email terverifikasi!",
-          description: "Email Anda telah berhasil diverifikasi",
+          title: "Email berhasil diverifikasi! ✓",
+          description: "Sekarang Anda dapat mengakses semua fitur aplikasi FourByte.",
           variant: "default",
+          duration: 6000, // Durasi lebih lama (6 detik)
         });
         
-        // Tunggu sedikit sehingga pengguna dapat melihat pesan sukses
+        // Tambahkan notifikasi pada sistem notifikasi aplikasi
+        try {
+          await apiRequest("POST", "/api/notifications", {
+            type: "system_message",
+            title: "Email Terverifikasi",
+            content: "Email Anda telah berhasil diverifikasi. Terima kasih!",
+            isRead: false
+          });
+        } catch (err) {
+          console.error("Failed to create notification", err);
+        }
+        
+        // Tunggu sedikit lebih lama sehingga pengguna dapat melihat pesan sukses
         setTimeout(() => {
           onOpenChange(false);
-        }, 2000);
+          // Muat ulang halaman untuk memastikan status terbaru terlihat
+          window.location.reload();
+        }, 3000);
       } else {
         const errorData = await response.json();
         toast({
