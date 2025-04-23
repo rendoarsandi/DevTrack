@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -770,7 +770,7 @@ export default function AdminProjectDetail() {
                               onClick={() => {
                                 // Toggle milestone completion status
                                 const newStatus = !milestone.completed;
-                                apiRequest("PATCH", `/api/projects/${id}/milestones/${milestone.id}`, {
+                                apiRequest("PATCH", `/api/projects/${projectId}/milestones/${milestone.id}`, {
                                   completed: newStatus
                                 })
                                 .then(() => {
@@ -817,7 +817,7 @@ export default function AdminProjectDetail() {
                               size="sm"
                               onClick={() => {
                                 if (typeof window !== 'undefined' && confirm("Are you sure you want to delete this milestone?")) {
-                                  apiRequest("DELETE", `/api/projects/${id}/milestones/${milestone.id}`)
+                                  apiRequest("DELETE", `/api/projects/${projectId}/milestones/${milestone.id}`)
                                   .then(() => {
                                     queryClient.invalidateQueries({
                                       queryKey: [`/api/projects/${id}/milestones`],
@@ -936,7 +936,7 @@ export default function AdminProjectDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <LiveChat projectId={parseInt(id)} isAdmin={true} />
+                <LiveChat projectId={parseInt(projectId)} isAdmin={true} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -990,7 +990,7 @@ export default function AdminProjectDetail() {
                     }
                     
                     // Submit handover feedback
-                    apiRequest("POST", `/api/projects/${id}/feedback`, {
+                    apiRequest("POST", `/api/projects/${projectId}/feedback`, {
                       content: `PROJECT HANDOVER: ${handoverMessage}`,
                     }).then(() => {
                       // Update project status to completed
