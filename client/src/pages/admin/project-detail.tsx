@@ -54,27 +54,27 @@ export default function AdminProjectDetail() {
   
   // Fetch project details
   const { data: project, isLoading: isLoadingProject } = useQuery<Project>({
-    queryKey: [`/api/admin/projects/${id}`],
+    queryKey: [`/api/admin/projects/${projectId}`],
     refetchOnWindowFocus: false,
   });
   
   // Fetch project activities
   const { data: activities = [] } = useQuery<Activity[]>({
-    queryKey: [`/api/projects/${id}/activities`],
+    queryKey: [`/api/projects/${projectId}/activities`],
     refetchOnWindowFocus: false,
     enabled: !!project, 
   });
   
   // Fetch project milestones
   const { data: milestones = [] } = useQuery<Milestone[]>({
-    queryKey: [`/api/projects/${id}/milestones`],
+    queryKey: [`/api/projects/${projectId}/milestones`],
     refetchOnWindowFocus: false,
     enabled: !!project,
   });
   
   // Fetch project feedback
   const { data: feedback = [] } = useQuery<Feedback[]>({
-    queryKey: [`/api/projects/${id}/feedback`],
+    queryKey: [`/api/projects/${projectId}/feedback`],
     refetchOnWindowFocus: false,
     enabled: !!project,
   });
@@ -114,7 +114,7 @@ export default function AdminProjectDetail() {
       
       const response = await apiRequest(
         "PATCH", 
-        `/api/admin/projects/${id}`, 
+        `/api/admin/projects/${projectId}`, 
         updatedData
       );
       return response.json();
@@ -147,20 +147,20 @@ export default function AdminProjectDetail() {
       
       // Jika ada perubahan status, catat sebagai activity
       if (activityContent) {
-        apiRequest("POST", `/api/projects/${id}/activities`, {
+        apiRequest("POST", `/api/projects/${projectId}/activities`, {
           type: "status_change",
           content: activityContent
         });
       }
       
       queryClient.invalidateQueries({
-        queryKey: [`/api/admin/projects/${id}`],
+        queryKey: [`/api/admin/projects/${projectId}`],
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/admin/projects"],
       });
       queryClient.invalidateQueries({
-        queryKey: [`/api/projects/${id}/activities`],
+        queryKey: [`/api/projects/${projectId}/activities`],
       });
     },
     onError: (error: Error) => {
@@ -335,7 +335,7 @@ export default function AdminProjectDetail() {
             
             <Button 
               variant="outline"
-              onClick={() => navigate(`/admin/projects/${id}/edit`)}
+              onClick={() => navigate(`/admin/projects/${projectId}/edit`)}
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit Project
@@ -625,13 +625,13 @@ export default function AdminProjectDetail() {
                     if (typeof window !== 'undefined') {
                       const commitMessage = window.prompt("Enter GitHub commit message:");
                       if (commitMessage) {
-                        apiRequest("POST", `/api/projects/${id}/activities`, {
+                        apiRequest("POST", `/api/projects/${projectId}/activities`, {
                           type: "commit",
                           content: commitMessage
                         })
                         .then(() => {
                           queryClient.invalidateQueries({
-                            queryKey: [`/api/projects/${id}/activities`],
+                            queryKey: [`/api/projects/${projectId}/activities`],
                           });
                           toast({
                             title: "Commit logged",
@@ -717,7 +717,7 @@ export default function AdminProjectDetail() {
                         dueDate.setDate(dueDate.getDate() + 7); // Default due in 1 week
                         
                         // Create a new milestone
-                        apiRequest("POST", `/api/projects/${id}/milestones`, {
+                        apiRequest("POST", `/api/projects/${projectId}/milestones`, {
                           title,
                           description: description || "",
                           dueDate: dueDate.toISOString(),
