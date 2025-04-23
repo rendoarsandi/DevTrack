@@ -40,8 +40,11 @@ export default function LandingPage() {
   const { user, logoutMutation } = useAuth();
   const [location, navigate] = useLocation();
   
-  // Default values for notifications when not logged in
-  const { notifications = [], unreadCount = 0 } = user ? useNotifications() : { notifications: [], unreadCount: 0 };
+  // Selalu panggil hooks di level atas (tidak dalam kondisional)
+  const notificationsData = useNotifications();
+  // Kemudian gunakan data jika user login, atau default jika tidak
+  const notifications = user ? notificationsData.notifications : [];
+  const unreadCount = user ? notificationsData.unreadCount : 0;
   
   // Get user initials for avatar
   const getUserInitials = () => {
