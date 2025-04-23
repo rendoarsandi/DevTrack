@@ -1,4 +1,7 @@
-import { users, projects, feedback, activities, milestones, notifications, invoices, payments } from "@shared/schema";
+import { 
+  users, projects, feedback, activities, milestones, 
+  notifications, invoices, payments, chatMessages 
+} from "@shared/schema";
 import type { 
   User, InsertUser, 
   Project, InsertProject, UpdateProject,
@@ -7,7 +10,8 @@ import type {
   Milestone, InsertMilestone, UpdateMilestone,
   Notification, InsertNotification, UpdateNotification,
   Invoice, InsertInvoice, UpdateInvoice,
-  Payment, InsertPayment
+  Payment, InsertPayment,
+  ChatMessage, InsertChatMessage
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
@@ -25,7 +29,9 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserEmailVerification(userId: number, isVerified: boolean): Promise<User | undefined>;
   
   // Project methods
   getProjects(): Promise<Project[]>;
@@ -103,12 +109,26 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+  
+  async updateUserEmailVerification(userId: number, isVerified: boolean): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ emailVerified: isVerified, ...(isVerified ? { lastLogin: new Date() } : {}) })
+      .where(eq(users.id, userId))
+      .returning();
+    return user || undefined;
   }
 
   // Project methods
