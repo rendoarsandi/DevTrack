@@ -98,6 +98,24 @@ export const paymentTypeEnum = pgEnum("payment_type", [
   "full"          // Pembayaran penuh (100%)
 ]);
 
+// Enum untuk tipe pesan chat
+export const chatTypeEnum = pgEnum("chat_type", [
+  "system",       // Pesan sistem (join, leave, dll)
+  "chat"          // Pesan chat biasa dari pengguna
+]);
+
+// Tabel untuk pesan chat
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  userId: integer("user_id").references(() => users.id), // Bisa null untuk pesan sistem
+  username: text("username").notNull(), // Menyimpan username secara eksplisit
+  role: text("role").notNull(), // Menyimpan role secara eksplisit
+  type: chatTypeEnum("type").notNull(),
+  content: text("content").notNull(), 
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Tabel untuk notifikasi
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
