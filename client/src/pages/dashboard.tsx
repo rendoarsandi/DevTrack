@@ -40,36 +40,44 @@ export default function Dashboard() {
   
   const { toast } = useToast();
   
-  // Load projects with error handling
+  // Load projects
   const { 
     data: projects, 
     isLoading: isLoadingProjects,
     error: projectError
   } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
-    retry: 2,
-    onError: (error) => {
-      console.error("Error loading projects:", error);
+    retry: 2
+  });
+
+  // Show toast if there's an error loading projects
+  useEffect(() => {
+    if (projectError) {
+      console.error("Error loading projects:", projectError);
       toast({
         title: "Gagal memuat proyek",
         description: "Terjadi kesalahan saat memuat daftar proyek. Silakan coba lagi.",
         variant: "destructive"
       });
     }
-  });
+  }, [projectError, toast]);
 
-  // Load activities with error handling
+  // Load activities
   const { 
     data: activities, 
     isLoading: isLoadingActivities,
     error: activitiesError
   } = useQuery<Activity[]>({
     queryKey: ["/api/activities"],
-    retry: 2,
-    onError: (error) => {
-      console.error("Error loading activities:", error);
-    }
+    retry: 2
   });
+  
+  // Log activity errors without showing toast
+  useEffect(() => {
+    if (activitiesError) {
+      console.error("Error loading activities:", activitiesError);
+    }
+  }, [activitiesError]);
 
   // Calculate stats
   const stats = {
