@@ -25,6 +25,9 @@ import AdminUsers from "@/pages/admin/admin-users";
 import AdminAnalytics from "@/pages/admin/admin-analytics";
 import AdminSettings from "@/pages/admin/admin-settings";
 import { SuccessNotification } from "@/components/notification/SuccessNotification";
+import { VerificationStatusToast } from "@/components/auth/VerificationStatusToast";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 // Correct implementation for project detail route
 const SafeProjectDetail = () => {
@@ -64,6 +67,36 @@ function Router() {
 }
 
 function App() {
+  const { toast } = useToast();
+  
+  // Notifikasi verifikasi email sukses yang muncul saat parameter URL ada
+  useEffect(() => {
+    // Cek parameter URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get('verified');
+    
+    console.log("App loaded, checking URL params:", { verified });
+    
+    // Tampilkan notification ketika komponen dimuat jika URL mengandung parameter verified=success
+    if (verified === 'success') {
+      console.log("Displaying email verification success toast");
+      
+      // Hapus parameter dari URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verified');
+      window.history.replaceState({}, document.title, url.toString());
+      
+      // Tampilkan toast langsung
+      toast({
+        title: "Email Berhasil Diverifikasi! ✓",
+        description: "Email Anda telah berhasil diverifikasi. Anda sekarang dapat menggunakan semua fitur FourByte.",
+        variant: "default",
+        className: "bg-green-50 border-green-200 text-green-800",
+        duration: 10000,
+      });
+    }
+  }, [toast]);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
