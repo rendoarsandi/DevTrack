@@ -83,10 +83,8 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
         setTimeout(() => {
           onOpenChange(false);
           
-          console.log("Email berhasil diverifikasi, akan mengarahkan ke halaman dengan parameter sukses");
-          
-          // Alih-alih manipulasi URL, gunakan navigasi langsung dengan parameter sukses
-          window.location.replace(`${window.location.pathname}?verified=success`);
+          // Refresh halaman dengan reload lengkap, menampilkan notifikasi verifikasi email langsung
+          window.location.href = "/?verified=success";
         }, 2000);
       } else {
         const errorData = await response.json();

@@ -103,6 +103,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <SuccessNotification />
+          <VerificationStatusToast />
           <Router />
         </TooltipProvider>
       </AuthProvider>
