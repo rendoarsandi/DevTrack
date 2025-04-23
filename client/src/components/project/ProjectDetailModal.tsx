@@ -608,7 +608,8 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               value="feedback" 
               className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
             >
-              Messages
+              <FileIcon className="mr-2 h-4 w-4" />
+              Send Media & Files
             </TabsTrigger>
             <TabsTrigger 
               value="chat" 
@@ -806,12 +807,26 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
           </TabsContent>
 
           <TabsContent value="chat" className="mt-0">
+            <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md mb-4">
+              <h3 className="text-sm font-medium text-green-800 dark:text-green-300 mb-1">Live Chat</h3>
+              <p className="text-xs text-green-700 dark:text-green-400">
+                Real-time text chat for quick discussions with the development team. Perfect for asking questions 
+                and getting immediate responses. For file sharing, please use the Send Media & Files tab.
+              </p>
+            </div>
             {/* Conditionally render LiveChat only when project data is available */}
             {project && <LiveChat projectId={projectId} />}
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-4 mt-0">
             <div className="space-y-4">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md mb-4">
+                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Send Media & Files</h3>
+                <p className="text-xs text-blue-700 dark:text-blue-400">
+                  This feature allows you to send messages with files, images, and other media attachments. 
+                  Perfect for sharing documents and formal communications that need to be preserved.
+                </p>
+              </div>
               <Textarea 
                 placeholder="Type your message here..."
                 className="min-h-[100px]"
