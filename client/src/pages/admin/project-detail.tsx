@@ -725,7 +725,7 @@ export default function AdminProjectDetail() {
                         })
                         .then(() => {
                           queryClient.invalidateQueries({
-                            queryKey: [`/api/projects/${id}/milestones`],
+                            queryKey: [`/api/projects/${projectId}/milestones`],
                           });
                           toast({
                             title: "Milestone added",
@@ -784,7 +784,7 @@ export default function AdminProjectDetail() {
                                   ).length;
                                   const progress = Math.round((completedCount / milestones.length) * 100);
                                   
-                                  apiRequest("PATCH", `/api/admin/projects/${id}`, {
+                                  apiRequest("PATCH", `/api/admin/projects/${projectId}`, {
                                     progress: progress
                                   })
                                   .then(() => {
