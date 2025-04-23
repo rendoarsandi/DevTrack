@@ -70,16 +70,30 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
+  // Cache untuk user yang sering di-deserialize
+  const userCache = new Map<number, Express.User>();
+  const CACHE_TTL = 60 * 1000; // 60 detik cache TTL
+  
   passport.deserializeUser(async (id: number, done) => {
     try {
+      // Cek apakah user ada di cache
+      if (userCache.has(id)) {
+        return done(null, userCache.get(id));
+      }
+      
       const user = await storage.getUser(id);
       
       if (!user) {
         return done(null, false);
       }
       
-      // Pastikan informasi peran user dimuat
-      console.log("Deserializing user:", { id: user.id, username: user.username, role: user.role });
+      // Simpan user di cache untuk akses cepat
+      userCache.set(id, user);
+      
+      // Hapus dari cache setelah TTL berakhir
+      setTimeout(() => {
+        userCache.delete(id);
+      }, CACHE_TTL);
       
       done(null, user);
     } catch (error) {
@@ -136,8 +150,6 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: Express.User | false, info: any) => {
-      console.log("Login attempt:", { username: req.body.username, success: !!user });
-      
       if (err) {
         console.error("Login error:", err);
         return next(err);
@@ -153,14 +165,9 @@ export function setupAuth(app: Express) {
           return next(loginErr);
         }
         
-        console.log("User logged in successfully:", { 
-          id: user.id, 
-          username: user.username,
-          role: user.role 
-        });
-        
-        // Return minimal user info
-        res.status(200).json(user);
+        // Return user info tanpa password untuk keamanan
+        const { password, ...userWithoutPassword } = user as any;
+        res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });
@@ -173,21 +180,13 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("GET /api/user called, authenticated:", req.isAuthenticated());
-    
     if (!req.isAuthenticated()) {
-      console.log("User not authenticated");
       return res.status(401).json({ message: "Not authenticated" });
     }
     
-    // Memastikan data pengguna lengkap sebelum dikirim
-    console.log("Sending user data:", { 
-      id: req.user.id, 
-      username: req.user.username,
-      role: req.user.role 
-    });
-    
-    res.json(req.user);
+    // Mengirim data user tanpa password untuk keamanan
+    const { password, ...userWithoutPassword } = req.user as any;
+    res.json(userWithoutPassword);
   });
 
   // Endpoint untuk memulai verifikasi email

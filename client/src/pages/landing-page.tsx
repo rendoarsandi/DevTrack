@@ -13,16 +13,17 @@ import {
   Star,
   Menu,
   X,
-  Moon,
-  Sun,
   LayoutDashboard,
   User,
   LogOut,
   Bell
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useNotifications } from "@/hooks/use-notifications";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +32,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { useNotifications } from "@/hooks/use-notifications";
+
+// Lazy load components that are only used conditionally
+const UserNavMenu = lazy(() => import("@/components/layout/UserNavMenu"));
+const NotificationIndicator = lazy(() => import("@/components/notification/NotificationIndicator"));
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -108,47 +110,12 @@ export default function LandingPage() {
               /* User is logged in - Show dashboard access */
               <div className="hidden sm:flex items-center space-x-3">
                 {/* Notifications Icon with Badge */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative">
-                      <Bell className="h-5 w-5" />
-                      {unreadCount > 0 && (
-                        <Badge 
-                          className="absolute -top-1 -right-1 px-1 min-w-[18px] h-[18px] text-[10px] flex items-center justify-center"
-                          variant="destructive"
-                        >
-                          {unreadCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 p-2">
-                    <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {notifications.length > 0 ? (
-                      notifications.slice(0, 5).map((notification: any) => (
-                        <DropdownMenuItem key={notification.id} className="p-3">
-                          <div className="flex flex-col space-y-1">
-                            <span className="font-medium text-sm">{notification.title}</span>
-                            <span className="text-xs text-muted-foreground">{notification.content}</span>
-                          </div>
-                        </DropdownMenuItem>
-                      ))
-                    ) : (
-                      <div className="py-3 px-2 text-center text-sm text-muted-foreground">
-                        Tidak ada notifikasi
-                      </div>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link href="/dashboard">
-                        <div className="w-full text-center text-sm text-primary font-medium">
-                          Lihat Semua Notifikasi
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Suspense fallback={<div className="w-10 h-10"></div>}>
+                  <NotificationIndicator 
+                    notifications={notifications} 
+                    unreadCount={unreadCount} 
+                  />
+                </Suspense>
                 
                 {/* Dashboard Button */}
                 <Link href="/dashboard">
@@ -159,39 +126,12 @@ export default function LandingPage() {
                 </Link>
                 
                 {/* User Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="hidden md:inline-block">{user.username}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings">
-                        <User className="h-4 w-4 mr-2" />
-                        Profil
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Suspense fallback={<div className="w-10 h-10"></div>}>
+                  <UserNavMenu
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                </Suspense>
               </div>
             ) : (
               /* User is not logged in - Show auth buttons */
