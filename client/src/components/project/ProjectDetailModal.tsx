@@ -565,7 +565,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" aria-describedby="project-description">
         <DialogHeader>
           <div className="mb-4 pb-4 border-b border-border">
             <div className="flex justify-between items-start">
@@ -574,7 +574,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
               </DialogTitle>
               <StatusBadge status={project.status} />
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p id="project-description" className="mt-2 text-sm text-muted-foreground">
               {project.description}
             </p>
           </div>

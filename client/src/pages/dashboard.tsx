@@ -38,20 +38,37 @@ export default function Dashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedModalTab, setSelectedModalTab] = useState<string>("overview");
   
-  // Load projects
+  const { toast } = useToast();
+  
+  // Load projects with error handling
   const { 
     data: projects, 
-    isLoading: isLoadingProjects 
+    isLoading: isLoadingProjects,
+    error: projectError
   } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+    retry: 2,
+    onError: (error) => {
+      console.error("Error loading projects:", error);
+      toast({
+        title: "Gagal memuat proyek",
+        description: "Terjadi kesalahan saat memuat daftar proyek. Silakan coba lagi.",
+        variant: "destructive"
+      });
+    }
   });
 
-  // Load activities
+  // Load activities with error handling
   const { 
     data: activities, 
-    isLoading: isLoadingActivities 
+    isLoading: isLoadingActivities,
+    error: activitiesError
   } = useQuery<Activity[]>({
     queryKey: ["/api/activities"],
+    retry: 2,
+    onError: (error) => {
+      console.error("Error loading activities:", error);
+    }
   });
 
   // Calculate stats
@@ -83,7 +100,6 @@ export default function Dashboard() {
   }) : [];
 
   const { user } = useAuth();
-  const { toast } = useToast();
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   
   const handleNewProject = () => {
