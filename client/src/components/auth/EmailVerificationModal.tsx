@@ -82,8 +82,8 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
         // Tunggu sedikit lebih lama sehingga pengguna dapat melihat pesan sukses
         setTimeout(() => {
           onOpenChange(false);
-          // Muat ulang halaman untuk memastikan status terbaru terlihat
-          window.location.reload();
+          // Tambahkan parameter URL verified=success untuk memicu banner sukses
+          window.location.href = window.location.pathname + "?verified=success" + window.location.hash;
         }, 3000);
       } else {
         const errorData = await response.json();

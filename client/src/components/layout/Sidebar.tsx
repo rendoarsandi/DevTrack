@@ -85,7 +85,7 @@ export function Sidebar() {
             Dashboard
           </NavItem>
           <NavItem 
-            href="/projects" 
+            href="/" 
             icon={<ClipboardList size={18} />} 
             active={location.startsWith("/projects")}
           >
