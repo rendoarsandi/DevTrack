@@ -11,6 +11,10 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   role: roleEnum("role").notNull().default("client"),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  profilePicture: text("profile_picture"),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const statusEnum = pgEnum("status", [
@@ -177,8 +181,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   fullName: true,
   email: true,
   role: true,
+  emailVerified: true,
+  profilePicture: true,
 }).extend({
   role: z.enum(["client", "admin"]).default("client"),
+  emailVerified: z.boolean().default(false),
+  profilePicture: z.string().optional(),
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
