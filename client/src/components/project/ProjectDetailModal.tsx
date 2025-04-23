@@ -15,10 +15,9 @@ import {
   GitPullRequest,
   Loader2 as Loader2Icon,
   ClipboardCheck,
-  FileIcon,
+  File,
   MessageSquare,
   AlertCircle,
-  MessagesSquare,
   CheckCircle
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -34,9 +33,10 @@ interface ProjectDetailModalProps {
   projectId: number;
   isOpen: boolean;
   onClose: () => void;
+  defaultTab?: string;
 }
 
-export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetailModalProps) {
+export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "overview" }: ProjectDetailModalProps) {
   // Cek jika perlu menampilkan tab review berdasarkan localStorage
   const initialTab = (() => {
     if (typeof window !== 'undefined') {
@@ -46,7 +46,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
         return "review";
       }
     }
-    return "overview";
+    return defaultTab;
   })();
   
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -615,7 +615,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose }: ProjectDetail
               value="chat" 
               className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
             >
-              <MessagesSquare className="mr-2 h-4 w-4" />
+              <MessageSquare className="mr-2 h-4 w-4" />
               Live Chat
             </TabsTrigger>
             {project.status === "under_review" && (

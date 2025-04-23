@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -323,6 +323,7 @@ export default function Dashboard() {
           projectId={selectedProjectId}
           isOpen={selectedProjectId !== null}
           onClose={() => setSelectedProjectId(null)}
+          defaultTab={selectedModalTab}
         />
       )}
     </div>
