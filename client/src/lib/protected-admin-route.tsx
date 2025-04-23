@@ -14,9 +14,9 @@ export function ProtectedAdminRoute({
   const { user, isLoading, error } = useAuth();
   const { toast } = useToast();
   
-  // Debugging untuk melihat status user
+  // Debugging to see user status
   useEffect(() => {
-    const adminUsername = "admin"; // User admin khusus
+    const adminUsername = "admin"; // Special admin user
     
     console.log("Protected Admin Route State:", {
       isLoading,
@@ -31,7 +31,7 @@ export function ProtectedAdminRoute({
     
   }, [user, isLoading, error]);
 
-  // Tampilkan loading state
+  // Show loading state
   if (isLoading) {
     return (
       <Route path={path}>
@@ -68,9 +68,9 @@ export function ProtectedAdminRoute({
     );
   }
 
-  // Handle user tidak login
+  // Handle user not logged in
   if (!user) {
-    // Tampilkan pesan dan arahkan ke halaman login
+    // Show message and redirect to login page
     return (
       <Route path={path}>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-background">
@@ -90,11 +90,11 @@ export function ProtectedAdminRoute({
     );
   }
   
-  // Izinkan akses untuk user khusus 'admin' atau user dengan role 'admin'
+  // Allow access for special user 'admin' or users with 'admin' role
   const isAuthorized = user.username === "admin" || user.role === "admin";
   
   if (!isAuthorized) {
-    // Tampilkan pesan error akses dan arahkan ke dashboard pengguna
+    // Show access error message and redirect to user dashboard
     toast({
       title: "Access Denied",
       description: "You don't have permission to access the admin area",
@@ -110,7 +110,7 @@ export function ProtectedAdminRoute({
             Your account doesn't have admin privileges. Contact the administrator if you believe this is an error.
           </p>
           <a 
-            href="/" 
+            href="/dashboard" 
             className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
           >
             Return to Dashboard
@@ -120,7 +120,7 @@ export function ProtectedAdminRoute({
     );
   }
 
-  // User admin terautentikasi, render komponen admin
+  // Authenticated admin user, render admin component
   try {
     console.log("Rendering admin component for user:", user.username);
     
@@ -147,7 +147,7 @@ export function ProtectedAdminRoute({
             There was an error loading the admin page. Please try again later.
           </p>
           <a 
-            href="/" 
+            href="/dashboard" 
             className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
           >
             Return to Dashboard
