@@ -328,6 +328,20 @@ export type UpdateMilestone = z.infer<typeof updateMilestoneSchema>;
 export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
 export type UpdateInvoice = z.infer<typeof updateInvoiceSchema>;
 
+// Chat schema
+export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
+  projectId: true,
+  userId: true,
+  username: true,
+  role: true,
+  type: true,
+  content: true,
+}).extend({
+  type: z.enum(["system", "chat"]).default("chat"),
+});
+
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
@@ -336,3 +350,4 @@ export type Milestone = typeof milestones.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
+export type ChatMessage = typeof chatMessages.$inferSelect;

@@ -74,6 +74,10 @@ export interface IStorage {
   getPayment(id: number): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   
+  // Chat methods
+  getChatMessagesByProject(projectId: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
   // Session store
   sessionStore: any;
 }
@@ -693,6 +697,24 @@ export class DatabaseStorage implements IStorage {
     });
     
     return payment;
+  }
+  
+  // Chat methods
+  async getChatMessagesByProject(projectId: number): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.projectId, projectId))
+      .orderBy(asc(chatMessages.createdAt));
+  }
+  
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    
+    return chatMessage;
   }
 }
 
