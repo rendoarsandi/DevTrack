@@ -239,13 +239,13 @@ export function EnhancedReviewForm({ project, onComplete }: ReviewFormProps) {
       <Card>
         <CardHeader>
           <CardTitle>Review Project</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-foreground/70">
             Evaluate the completed project and provide your feedback
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as "review" | "uploads" | "action")}>
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 gap-1">
               <TabsTrigger value="review" className="flex items-center gap-1">
                 <FileTextIcon className="h-4 w-4" />
                 Review
