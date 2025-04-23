@@ -143,4 +143,45 @@
   .dark *::after {
     transition-duration: 300ms;
   }
+  
+  /* Custom background patterns */
+  .bg-grid-primary {
+    background-image: linear-gradient(var(--primary) 1px, transparent 1px),
+      linear-gradient(to right, var(--primary) 1px, transparent 1px);
+  }
+  
+  .bg-grid-white {
+    background-image: linear-gradient(white 1px, transparent 1px),
+      linear-gradient(to right, white 1px, transparent 1px);
+  }
+  
+  /* Animation classes */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 }

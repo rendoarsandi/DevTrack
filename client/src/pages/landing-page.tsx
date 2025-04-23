@@ -56,7 +56,14 @@ export default function LandingPage() {
   }, [theme]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+      {/* Background decorative elements - visible in both light and dark mode with appropriate opacity */}
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl translate-y-1/4 -translate-x-1/4"></div>
+      
+      {/* Grid patterns */}
+      <div className="absolute inset-0 bg-grid-primary/[0.025] bg-[size:30px_30px] dark:bg-grid-white/[0.025]"></div>
+      
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full backdrop-blur-sm bg-background/80 z-10 border-b border-border">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -204,7 +211,7 @@ export default function LandingPage() {
               <div className="mt-8 flex items-center gap-2 text-sm">
                 <div className="flex -space-x-2">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className={`w-8 h-8 rounded-full border-2 border-background bg-primary-${i * 100} flex items-center justify-center text-xs text-white`}>
+                    <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-primary/70 flex items-center justify-center text-xs text-white">
                       <Star className="h-3 w-3" />
                     </div>
                   ))}
@@ -216,7 +223,7 @@ export default function LandingPage() {
             </div>
             <div className="space-y-6">
               {/* Code Editor */}
-              <div className="relative rounded-xl overflow-hidden border border-border shadow-lg">
+              <div className="relative rounded-xl overflow-hidden border border-border shadow-lg animate-float">
                 <div className="bg-muted/80 py-2 px-4 border-b border-border flex items-center gap-1.5">
                   <div className="h-3 w-3 rounded-full bg-red-500"></div>
                   <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
@@ -306,7 +313,7 @@ export default function LandingPage() {
                   { name: "PostgreSQL", bg: "bg-sky-100 dark:bg-sky-950", text: "text-sky-600 dark:text-sky-400" },
                   { name: "AWS", bg: "bg-orange-100 dark:bg-orange-950", text: "text-orange-600 dark:text-orange-400" }
                 ].map((tech, i) => (
-                  <div key={i} className={`px-3 py-1.5 rounded-full text-xs font-medium ${tech.bg} ${tech.text}`}>
+                  <div key={i} className={`px-3 py-1.5 rounded-full text-xs font-medium ${tech.bg} ${tech.text} animate-pulse-slow`}>
                     {tech.name}
                   </div>
                 ))}
