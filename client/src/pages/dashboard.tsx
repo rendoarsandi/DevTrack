@@ -8,6 +8,8 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
 import { ProjectDetailModal } from "@/components/project/ProjectDetailModal";
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
+import { useAuth } from "@/hooks/use-auth";
 import { Project, Activity } from "@shared/schema";
 import { 
   Loader2, 
@@ -19,12 +21,14 @@ import {
   ArrowUpRight,
   ClipboardList,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  ShieldAlert
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [location, navigate] = useLocation();
@@ -77,7 +81,23 @@ export default function Dashboard() {
     return true;
   }) : [];
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  
   const handleNewProject = () => {
+    // Periksa apakah email sudah diverifikasi
+    if (user && !user.emailVerified) {
+      toast({
+        title: "Verifikasi Email Diperlukan",
+        description: "Anda harus memverifikasi email Anda sebelum membuat permintaan proyek baru.",
+        variant: "destructive",
+      });
+      setShowVerificationModal(true);
+      return;
+    }
+    
+    // Jika email sudah diverifikasi, lanjutkan ke halaman pembuatan proyek
     navigate("/projects/new");
   };
   
@@ -118,6 +138,9 @@ export default function Dashboard() {
         <main className="flex-1 relative overflow-y-auto focus:outline-none custom-scrollbar pt-16 md:pt-0 bg-gradient-to-b from-[#f0f4f9] to-background">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              {/* Email Verification Banner */}
+              <EmailVerificationBanner />
+              
               {/* Welcome Banner */}
               <div className="mb-8 bg-gradient-to-r from-primary/90 to-primary rounded-xl shadow-lg overflow-hidden">
                 <div className="px-6 py-8 md:px-10">
@@ -326,6 +349,12 @@ export default function Dashboard() {
           defaultTab={selectedModalTab}
         />
       )}
+      
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export function EmailVerificationBanner() {
 
   return (
     <>
-      <Alert variant="warning" className="mb-4">
+      <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Verifikasi Email Anda</AlertTitle>
         <AlertDescription className="flex justify-between items-center">
