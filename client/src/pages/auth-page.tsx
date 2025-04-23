@@ -48,7 +48,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
@@ -89,7 +89,7 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-heading text-center">DevTrack</CardTitle>
+            <CardTitle className="text-2xl font-heading text-center">FourByte</CardTitle>
             <CardDescription className="text-center">
               {authType === "login" 
                 ? "Sign in to your account to continue" 
@@ -251,7 +251,7 @@ export default function AuthPage() {
             Manage your app development projects with ease
           </h1>
           <p className="text-lg mb-6">
-            DevTrack helps you track your development projects from initial brief to 
+            FourByte helps you track your development projects from initial brief to 
             final deployment with comprehensive project management tools.
           </p>
           <ul className="space-y-2">

@@ -89,15 +89,15 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
       } else {
         const errorData = await response.json();
         toast({
-          title: "Verifikasi gagal",
-          description: errorData.message || "Kode verifikasi tidak valid",
+          title: "Verification failed",
+          description: errorData.message || "Invalid verification code",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat memverifikasi email",
+        description: "An error occurred while verifying your email",
         variant: "destructive",
       });
     } finally {
@@ -113,22 +113,22 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
       
       if (response.ok) {
         toast({
-          title: "Kode verifikasi terkirim!",
-          description: "Kode verifikasi baru telah dikirim ke email Anda",
+          title: "Verification code sent!",
+          description: "A new verification code has been sent to your email",
           variant: "default",
         });
       } else {
         const errorData = await response.json();
         toast({
-          title: "Gagal mengirim kode",
-          description: errorData.message || "Tidak dapat mengirim kode verifikasi",
+          title: "Failed to send code",
+          description: errorData.message || "Could not send verification code",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat mengirim ulang kode verifikasi",
+        description: "An error occurred while resending the verification code",
         variant: "destructive",
       });
     } finally {
@@ -146,22 +146,22 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
             {isVerified ? (
               <>
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <span>Email Terverifikasi</span>
+                <span>Email Verified</span>
               </>
             ) : (
               <>
                 <Mail className="h-5 w-5 text-primary" />
-                <span>Verifikasi Email Anda</span>
+                <span>Verify Your Email</span>
               </>
             )}
           </DialogTitle>
           <DialogDescription>
             {isVerified ? (
-              "Email Anda telah terverifikasi. Terima kasih!"
+              "Your email has been verified. Thank you!"
             ) : (
               <>
-                Kami telah mengirimkan kode verifikasi ke email Anda ({user?.email}).
-                Masukkan kode 6 digit untuk memverifikasi email Anda.
+                We have sent a verification code to your email ({user?.email}).
+                Enter the 6-digit code to verify your email address.
               </>
             )}
           </DialogDescription>
@@ -175,10 +175,10 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Verifikasi</FormLabel>
+                    <FormLabel>Verification Code</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Masukkan kode 6 digit"
+                        placeholder="Enter 6-digit code"
                         {...field}
                         disabled={isLoading}
                         className="text-center tracking-widest text-lg"
@@ -199,10 +199,10 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Memverifikasi...
+                      Verifying...
                     </>
                   ) : (
-                    "Verifikasi"
+                    "Verify"
                   )}
                 </Button>
                 
@@ -217,10 +217,10 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
                     {isResending ? (
                       <>
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Mengirim...
+                        Sending...
                       </>
                     ) : (
-                      "Kirim Ulang Kode"
+                      "Resend Code"
                     )}
                   </Button>
                   
@@ -230,7 +230,7 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
                     onClick={() => onOpenChange(false)}
                     className="text-sm"
                   >
-                    Nanti saja
+                    Maybe Later
                   </Button>
                 </div>
               </DialogFooter>
@@ -244,7 +244,7 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
               onClick={() => onOpenChange(false)} 
               className="w-full"
             >
-              Tutup
+              Close
             </Button>
           </DialogFooter>
         )}
