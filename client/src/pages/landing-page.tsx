@@ -37,13 +37,11 @@ import { useNotifications } from "@/hooks/use-notifications";
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>("light");
   const { user, logoutMutation } = useAuth();
   const [location, navigate] = useLocation();
-  const { data: notifications = [] } = useNotifications();
   
-  // Count unread notifications
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  // Default values for notifications when not logged in
+  const { notifications = [], unreadCount = 0 } = user ? useNotifications() : { notifications: [], unreadCount: 0 };
   
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -60,39 +58,6 @@ export default function LandingPage() {
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-  
-  // Initialize theme based on user preference or system preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme("dark");
-    }
-  }, []);
-  
-  // Toggle between dark and light themes
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    
-    // Apply theme to document
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-  
-  // Apply theme when it changes
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
@@ -158,7 +123,7 @@ export default function LandingPage() {
                     <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {notifications.length > 0 ? (
-                      notifications.slice(0, 5).map((notification) => (
+                      notifications.slice(0, 5).map((notification: any) => (
                         <DropdownMenuItem key={notification.id} className="p-3">
                           <div className="flex flex-col space-y-1">
                             <span className="font-medium text-sm">{notification.title}</span>
@@ -284,19 +249,61 @@ export default function LandingPage() {
                   Contact
                 </a>
                 
-                {/* Mobile Auth Buttons */}
-                <div className="sm:hidden flex flex-col space-y-2 pt-2">
-                  <Link href="/auth">
-                    <Button className="w-full" size="sm">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/auth">
-                    <Button className="w-full" variant="outline" size="sm">
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
+                {/* Mobile User Menu */}
+                {user ? (
+                  // Pengguna sudah login - tampilkan opsi dashboard
+                  <div className="pt-2">
+                    <div className="flex items-center gap-3 p-3 bg-muted/60 rounded-md mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{user.username}</div>
+                        <div className="text-xs text-muted-foreground">{user.email}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Link href="/dashboard">
+                        <Button className="w-full justify-start" variant="ghost" size="sm">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                      <Link href="/settings">
+                        <Button className="w-full justify-start" variant="ghost" size="sm">
+                          <User className="h-4 w-4 mr-2" />
+                          Profil
+                        </Button>
+                      </Link>
+                      <Button 
+                        className="w-full justify-start text-destructive" 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Pengguna belum login - tampilkan opsi sign in
+                  <div className="sm:hidden flex flex-col space-y-2 pt-2">
+                    <Link href="/auth">
+                      <Button className="w-full" size="sm">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link href="/auth">
+                      <Button className="w-full" variant="outline" size="sm">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
