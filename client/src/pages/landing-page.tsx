@@ -10,10 +10,51 @@ import {
   Zap, 
   MessageSquare, 
   CreditCard,
-  Star
+  Star,
+  Menu,
+  X,
+  Moon,
+  Sun
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>("light");
+  
+  // Initialize theme based on user preference or system preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme("dark");
+    }
+  }, []);
+  
+  // Toggle between dark and light themes
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    
+    // Apply theme to document
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+  
+  // Apply theme when it changes
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation Bar */}
@@ -22,6 +63,8 @@ export default function LandingPage() {
           <div className="flex items-center">
             <span className="font-heading font-bold text-2xl text-primary">FourByte</span>
           </div>
+          
+          {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6 text-sm">
             <a href="#services" className="hover:text-primary transition">Services</a>
             <a href="#process" className="hover:text-primary transition">Process</a>
@@ -29,19 +72,108 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-primary transition">Pricing</a>
             <a href="#contact" className="hover:text-primary transition">Contact</a>
           </div>
-          <div className="flex space-x-3">
-            <Link href="/auth">
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth">
-              <Button size="sm">
-                Get Started
-              </Button>
-            </Link>
+          
+          <div className="flex items-center space-x-3">
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
+            
+            {/* Mobile Menu Toggle */}
+            <button 
+              className="md:hidden p-2 rounded-full hover:bg-muted transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
+            
+            {/* Auth Buttons - Hidden on smallest screens */}
+            <div className="hidden sm:flex space-x-3">
+              <Link href="/auth">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth">
+                <Button size="sm">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
+        
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-background border-b border-border">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex flex-col space-y-4">
+                <a 
+                  href="#services" 
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Services
+                </a>
+                <a 
+                  href="#process" 
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Process
+                </a>
+                <a 
+                  href="#testimonials" 
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Testimonials
+                </a>
+                <a 
+                  href="#pricing" 
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <a 
+                  href="#contact" 
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Contact
+                </a>
+                
+                {/* Mobile Auth Buttons */}
+                <div className="sm:hidden flex flex-col space-y-2 pt-2">
+                  <Link href="/auth">
+                    <Button className="w-full" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth">
+                    <Button className="w-full" variant="outline" size="sm">
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -82,33 +214,102 @@ export default function LandingPage() {
                 </span>
               </div>
             </div>
-            <div className="relative rounded-xl overflow-hidden border border-border bg-card p-1">
-              <div className="absolute top-2 left-2 h-4 w-4 rounded-full bg-red-500"></div>
-              <div className="absolute top-2 left-8 h-4 w-4 rounded-full bg-yellow-500"></div>
-              <div className="absolute top-2 left-14 h-4 w-4 rounded-full bg-green-500"></div>
-              <div className="pt-6 pb-4 px-4 rounded-lg bg-muted/50 text-sm font-mono">
-                <div className="text-muted-foreground">// FourByte applications</div>
-                <div className="mt-2">
-                  <span className="text-blue-500">const</span>{" "}
-                  <span className="text-green-500">success</span> = {"{"}
+            <div className="space-y-6">
+              {/* Code Editor */}
+              <div className="relative rounded-xl overflow-hidden border border-border shadow-lg">
+                <div className="bg-muted/80 py-2 px-4 border-b border-border flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                  <div className="ml-2 text-xs text-muted-foreground font-medium">FourByte.js</div>
                 </div>
-                <div className="ml-4">
-                  <span className="text-violet-500">quality</span>:{" "}
-                  <span className="text-amber-500">'exceptional'</span>,
+                <div className="bg-card p-5 font-mono text-sm overflow-x-auto">
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">1</div>
+                    <div>
+                      <span className="text-muted-foreground">// Creating success with FourByte</span>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">2</div>
+                    <div>&nbsp;</div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">3</div>
+                    <div>
+                      <span className="text-blue-500">import</span> <span className="text-green-500">{'{ createApp }'}</span> <span className="text-blue-500">from</span> <span className="text-amber-500">'fourbyte'</span>;
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">4</div>
+                    <div>&nbsp;</div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">5</div>
+                    <div>
+                      <span className="text-blue-500">const</span> <span className="text-green-500">yourIdea</span> = <span>{'{'}</span>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">6</div>
+                    <div className="ml-4">
+                      <span className="text-violet-500">vision</span>: <span className="text-amber-500">'innovative'</span>,
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">7</div>
+                    <div className="ml-4">
+                      <span className="text-violet-500">goals</span>: [<span className="text-amber-500">'growth'</span>, <span className="text-amber-500">'efficiency'</span>, <span className="text-amber-500">'impact'</span>],
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">8</div>
+                    <div className="ml-4">
+                      <span className="text-violet-500">budget</span>: <span className="text-green-500">yourBudget</span>,
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">9</div>
+                    <div>
+                      <span>{'}'}</span>;
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">10</div>
+                    <div>&nbsp;</div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">11</div>
+                    <div>
+                      <span className="text-blue-500">const</span> <span className="text-green-500">result</span> = <span className="text-blue-500">await</span> <span className="text-green-500">createApp</span>(yourIdea);
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">12</div>
+                    <div>&nbsp;</div>
+                  </div>
+                  <div className="flex">
+                    <div className="text-muted-foreground mr-4 select-none">13</div>
+                    <div>
+                      <span className="text-blue-500">console</span>.<span className="text-green-500">log</span>(result); <span className="text-muted-foreground">// Your successful application</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <span className="text-violet-500">delivery</span>:{" "}
-                  <span className="text-amber-500">'on-time'</span>,
-                </div>
-                <div className="ml-4">
-                  <span className="text-violet-500">support</span>:{" "}
-                  <span className="text-amber-500">'24/7'</span>,
-                </div>
-                <div className="ml-4">
-                  <span className="text-violet-500">satisfaction</span>:{" "}
-                  <span className="text-amber-500">'guaranteed'</span>
-                </div>
-                <div>{"}"}</div>
+              </div>
+              
+              {/* Tech Stack Icons */}
+              <div className="flex flex-wrap gap-4 justify-center">
+                {[
+                  { name: "React", bg: "bg-blue-100 dark:bg-blue-950", text: "text-blue-600 dark:text-blue-400" },
+                  { name: "Node.js", bg: "bg-green-100 dark:bg-green-950", text: "text-green-600 dark:text-green-400" },
+                  { name: "TypeScript", bg: "bg-indigo-100 dark:bg-indigo-950", text: "text-indigo-600 dark:text-indigo-400" },
+                  { name: "PostgreSQL", bg: "bg-sky-100 dark:bg-sky-950", text: "text-sky-600 dark:text-sky-400" },
+                  { name: "AWS", bg: "bg-orange-100 dark:bg-orange-950", text: "text-orange-600 dark:text-orange-400" }
+                ].map((tech, i) => (
+                  <div key={i} className={`px-3 py-1.5 rounded-full text-xs font-medium ${tech.bg} ${tech.text}`}>
+                    {tech.name}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -283,59 +484,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Project Types Section */}
       <section id="pricing" className="py-20 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-heading font-bold">
-              Transparent Pricing Plans
+              Flexible Project Solutions
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Choose the right package for your project needs
+              We customize our approach based on your unique requirements
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
-                name: "Startup",
-                price: "$2,999",
-                description: "Perfect for small businesses and startups",
+                name: "Basic Application",
+                price: "Custom Quote",
+                description: "Streamlined solutions for startups and small businesses",
                 features: [
-                  "Basic web application",
+                  "Essential functionalities",
                   "Responsive design",
-                  "2 weeks delivery",
-                  "1 month support",
-                  "1 revision round"
+                  "User authentication",
+                  "Basic admin controls",
+                  "Post-launch support",
+                  "Flexible timeline"
                 ]
               },
               {
-                name: "Business",
-                price: "$5,999",
-                description: "Ideal for growing businesses with specific needs",
+                name: "Advanced Solution",
+                price: "Custom Quote",
+                description: "Comprehensive applications with enhanced features",
                 features: [
-                  "Advanced web application",
-                  "Mobile responsive design",
-                  "Admin dashboard",
-                  "4 weeks delivery",
-                  "3 months support",
-                  "3 revision rounds",
-                  "API integration"
+                  "Advanced functionality",
+                  "Responsive across all devices",
+                  "Comprehensive admin dashboard",
+                  "Regular progress updates",
+                  "Extended support period",
+                  "Multiple revision cycles",
+                  "API integrations"
                 ],
                 highlighted: true
               },
               {
-                name: "Enterprise",
-                price: "Custom",
-                description: "Tailored solutions for large organizations",
+                name: "Enterprise System",
+                price: "Custom Quote",
+                description: "Complex, scalable solutions for larger organizations",
                 features: [
-                  "Complex application systems",
-                  "Custom integrations",
-                  "Dedicated project manager",
-                  "Custom timeline",
-                  "12 months support",
-                  "Unlimited revisions",
-                  "24/7 priority support"
+                  "Complex system architecture",
+                  "Customized integrations",
+                  "Dedicated project management",
+                  "Tailored development timeline",
+                  "Extended maintenance contract",
+                  "Priority support channels",
+                  "Comprehensive documentation"
                 ]
               }
             ].map((plan, i) => (
@@ -349,21 +551,20 @@ export default function LandingPage() {
               >
                 {plan.highlighted && (
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-xs px-3 py-1 rounded-full">
-                    Most Popular
+                    Most Requested
                   </div>
                 )}
                 <div className="text-center">
                   <h3 className="text-xl font-heading font-semibold">{plan.name}</h3>
                   <div className="mt-4 mb-2">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    {plan.name !== "Enterprise" && <span className="text-muted-foreground">/project</span>}
+                    <span className="text-xl font-bold">{plan.price}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-6">{plan.description}</p>
                 </div>
                 <div className="space-y-3 mb-6">
                   {plan.features.map((feature, j) => (
-                    <div key={j} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
+                    <div key={j} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-0.5" />
                       <span className="text-sm">{feature}</span>
                     </div>
                   ))}
@@ -373,11 +574,44 @@ export default function LandingPage() {
                     className="w-full" 
                     variant={plan.highlighted ? "default" : "outline"}
                   >
-                    {plan.name === "Enterprise" ? "Contact Us" : "Get Started"}
+                    Request Proposal
                   </Button>
                 </Link>
               </div>
             ))}
+          </div>
+          
+          <div className="bg-card border border-border rounded-lg p-6 mt-12 max-w-3xl mx-auto">
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              <div className="rounded-full bg-primary/10 p-3">
+                <CreditCard className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-heading font-semibold mb-2">Transparent Pricing Process</h3>
+                <p className="text-muted-foreground mb-4">
+                  We understand that every project is unique. Rather than offering fixed prices that may not align with your specific needs, 
+                  we provide customized quotes based on your project requirements.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1" />
+                    <span className="text-sm">Detailed project scoping and requirements gathering</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1" />
+                    <span className="text-sm">Transparent breakdown of development costs</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1" />
+                    <span className="text-sm">Flexible payment schedules tied to project milestones</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-primary mt-1" />
+                    <span className="text-sm">No unexpected costs or hidden fees</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </section>
