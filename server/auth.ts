@@ -27,11 +27,17 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-// WARNING: This is a simplified version just for demonstration
-// In a real application, you should never use plain text passwords
+// Fungsi untuk membandingkan password yang di-input dengan hash yang tersimpan
 async function comparePasswords(supplied: string, stored: string) {
-  // For demo/testing purposes only
-  return supplied === stored;
+  // Jika password belum di-hash (untuk kasus pengembangan/pengujian)
+  if (!stored.includes('.')) {
+    return supplied === stored;
+  }
+  
+  // Jika password sudah di-hash dengan format proper
+  const [hashedPassword, salt] = stored.split('.');
+  const buf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return buf.toString('hex') === hashedPassword;
 }
 
 export function setupAuth(app: Express) {
