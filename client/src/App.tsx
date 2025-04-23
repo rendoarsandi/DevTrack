@@ -24,6 +24,7 @@ import AdminProjectEdit from "@/pages/admin/project-edit";
 import AdminUsers from "@/pages/admin/admin-users";
 import AdminAnalytics from "@/pages/admin/admin-analytics";
 import AdminSettings from "@/pages/admin/admin-settings";
+import { SuccessNotification } from "@/components/notification/SuccessNotification";
 
 // Correct implementation for project detail route
 const SafeProjectDetail = () => {
@@ -68,6 +69,7 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
+          <SuccessNotification />
           <Router />
         </TooltipProvider>
       </AuthProvider>

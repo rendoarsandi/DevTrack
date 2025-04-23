@@ -82,9 +82,41 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
         // Tunggu sedikit lebih lama sehingga pengguna dapat melihat pesan sukses
         setTimeout(() => {
           onOpenChange(false);
-          // Tambahkan parameter URL verified=success untuk memicu banner sukses
-          window.location.href = window.location.pathname + "?verified=success" + window.location.hash;
-        }, 3000);
+          
+          // Tambahkan parameter URL verified=success untuk memicu notifikasi
+          const url = new URL(window.location.href);
+          url.searchParams.set('verified', 'success');
+          
+          // Gunakan history API untuk tidak memicu refresh penuh
+          window.history.pushState({}, '', url.toString());
+          
+          console.log("Email berhasil diverifikasi, memicu notifikasi sukses");
+          
+          // Picu event kustom untuk memberi tahu SuccessNotification
+          window.dispatchEvent(new Event('email-verified'));
+          
+          // Picu juga event popstate sebagai backup
+          window.dispatchEvent(new Event('popstate'));
+          
+          // Tampilkan toast langsung dari sini juga untuk memastikan
+          toast({
+            title: "Email Berhasil Diverifikasi! ✓",
+            description: (
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-semibold">Verifikasi Berhasil</span>
+                </div>
+                <p className="mt-1">
+                  Email Anda telah berhasil diverifikasi. Anda sekarang dapat menggunakan semua fitur FourByte.
+                </p>
+              </div>
+            ),
+            variant: "default",
+            className: "bg-green-50 border-green-200 text-green-800",
+            duration: 10000, // 10 detik
+          });
+        }, 2000);
       } else {
         const errorData = await response.json();
         toast({
