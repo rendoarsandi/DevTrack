@@ -9,6 +9,7 @@ import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { ActivityItem } from "@/components/dashboard/ActivityItem";
 import { ProjectDetailModal } from "@/components/project/ProjectDetailModal";
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
+import { EmailVerificationModal } from "@/components/auth/EmailVerificationModal";
 import { useAuth } from "@/hooks/use-auth";
 import { Project, Activity } from "@shared/schema";
 import { 

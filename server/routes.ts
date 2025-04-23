@@ -7,6 +7,7 @@ import { setupAuth } from "./auth";
 import { setupFileUpload } from "./upload";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { sendVerificationEmail, verifyCode, resendVerificationCode } from "./email-verification";
 import { 
   insertProjectSchema, updateProjectSchema, 
   insertFeedbackSchema, insertMilestoneSchema, 
@@ -56,6 +57,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup file upload routes
   setupFileUpload(app);
+  
+  // Email verification routes
+  app.post("/api/verify-email/send", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const user = req.user;
+    
+    // Jangan kirim kode verifikasi jika email sudah diverifikasi
+    if (user.emailVerified) {
+      return res.status(400).json({ 
+        message: "Email already verified",
+        code: "EMAIL_ALREADY_VERIFIED"
+      });
+    }
+    
+    // Pastikan user punya email
+    if (!user.email) {
+      return res.status(400).json({ 
+        message: "User does not have an email address",
+        code: "NO_EMAIL_ADDRESS"
+      });
+    }
+    
+    try {
+      const success = await sendVerificationEmail(user.email, user.username);
+      
+      if (success) {
+        return res.status(200).json({ 
+          message: "Verification code sent successfully" 
+        });
+      } else {
+        return res.status(500).json({ 
+          message: "Failed to send verification code",
+          code: "EMAIL_SEND_FAILED"
+        });
+      }
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      return res.status(500).json({ 
+        message: "An error occurred while sending verification code",
+        code: "SERVER_ERROR"
+      });
+    }
+  });
+  
+  app.post("/api/verify-email/verify", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const user = req.user;
+    const { code } = req.body;
+    
+    // Pastikan user punya email
+    if (!user.email) {
+      return res.status(400).json({ 
+        message: "User does not have an email address",
+        code: "NO_EMAIL_ADDRESS" 
+      });
+    }
+    
+    // Verifikasi kode
+    if (!code || !verifyCode(user.email, code)) {
+      return res.status(400).json({ 
+        message: "Invalid or expired verification code",
+        code: "INVALID_CODE"
+      });
+    }
+    
+    try {
+      // Update status verifikasi email di database
+      const updatedUser = await storage.updateUserEmailVerification(user.id, true);
+      
+      if (updatedUser) {
+        // Update user di session
+        req.login(updatedUser, (err) => {
+          if (err) {
+            console.error("Error updating session:", err);
+            return res.status(500).json({ 
+              message: "Failed to update session",
+              code: "SESSION_UPDATE_FAILED"
+            });
+          }
+          
+          return res.status(200).json({ 
+            message: "Email verified successfully",
+            user: {
+              id: updatedUser.id,
+              username: updatedUser.username,
+              email: updatedUser.email,
+              emailVerified: updatedUser.emailVerified,
+              role: updatedUser.role
+            }
+          });
+        });
+      } else {
+        return res.status(500).json({ 
+          message: "Failed to update user verification status",
+          code: "UPDATE_FAILED"
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      return res.status(500).json({ 
+        message: "An error occurred while verifying email",
+        code: "SERVER_ERROR"
+      });
+    }
+  });
+  
+  app.post("/api/verify-email/resend", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const user = req.user;
+    
+    // Jangan kirim kode verifikasi jika email sudah diverifikasi
+    if (user.emailVerified) {
+      return res.status(400).json({ 
+        message: "Email already verified",
+        code: "EMAIL_ALREADY_VERIFIED"
+      });
+    }
+    
+    // Pastikan user punya email
+    if (!user.email) {
+      return res.status(400).json({ 
+        message: "User does not have an email address",
+        code: "NO_EMAIL_ADDRESS"
+      });
+    }
+    
+    try {
+      const success = await resendVerificationCode(user.email);
+      
+      if (success) {
+        return res.status(200).json({ 
+          message: "Verification code resent successfully" 
+        });
+      } else {
+        return res.status(500).json({ 
+          message: "Failed to resend verification code",
+          code: "EMAIL_RESEND_FAILED"
+        });
+      }
+    } catch (error) {
+      console.error("Error resending verification code:", error);
+      return res.status(500).json({ 
+        message: "An error occurred while resending verification code",
+        code: "SERVER_ERROR"
+      });
+    }
+  });
   
   // Admin routes
   app.get("/api/admin/projects", adminAuthMiddleware, async (req, res) => {
@@ -209,6 +360,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Periksa apakah email pengguna telah diverifikasi
+    if (!req.user.emailVerified) {
+      return res.status(403).json({ 
+        message: "Email verification required",
+        code: "EMAIL_VERIFICATION_REQUIRED"
+      });
+    }
     
     try {
       const validatedData = insertProjectSchema.parse({
