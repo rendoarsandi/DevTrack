@@ -28,6 +28,7 @@ import { SuccessNotification } from "@/components/notification/SuccessNotificati
 import { VerificationStatusToast } from "@/components/auth/VerificationStatusToast";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import LandingPage from "@/pages/landing-page";
 
 // Correct implementation for project detail route
 const SafeProjectDetail = () => {
@@ -38,7 +39,12 @@ const SafeProjectDetail = () => {
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Dashboard} />
+      {/* Public routes */}
+      <Route path="/" component={LandingPage} />
+      <Route path="/auth" component={AuthPage} />
+      
+      {/* Protected client routes */}
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/projects/new" component={ProjectForm} />
       <ProtectedRoute path="/projects/:id" component={SafeProjectDetail} />
       <ProtectedRoute path="/messages" component={Messages} />
@@ -60,7 +66,6 @@ function Router() {
       <ProtectedAdminRoute path="/admin/analytics" component={AdminAnalytics} />
       <ProtectedAdminRoute path="/admin/settings" component={AdminSettings} />
       
-      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -69,27 +74,27 @@ function Router() {
 function App() {
   const { toast } = useToast();
   
-  // Notifikasi verifikasi email sukses yang muncul saat parameter URL ada
+  // Email verification success notification when URL parameter exists
   useEffect(() => {
-    // Cek parameter URL
+    // Check URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const verified = urlParams.get('verified');
     
     console.log("App loaded, checking URL params:", { verified });
     
-    // Tampilkan notification ketika komponen dimuat jika URL mengandung parameter verified=success
+    // Display notification when component loads if URL contains verified=success parameter
     if (verified === 'success') {
       console.log("Displaying email verification success toast");
       
-      // Hapus parameter dari URL
+      // Remove parameter from URL
       const url = new URL(window.location.href);
       url.searchParams.delete('verified');
       window.history.replaceState({}, document.title, url.toString());
       
-      // Tampilkan toast langsung
+      // Display toast notification
       toast({
-        title: "Email Berhasil Diverifikasi! ✓",
-        description: "Email Anda telah berhasil diverifikasi. Anda sekarang dapat menggunakan semua fitur FourByte.",
+        title: "Email Successfully Verified! ✓",
+        description: "Your email has been successfully verified. You can now use all FourByte features.",
         variant: "default",
         className: "bg-green-50 border-green-200 text-green-800",
         duration: 10000,

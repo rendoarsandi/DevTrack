@@ -12,19 +12,19 @@ export function VerificationStatusToast() {
     if (user?.emailVerified && !shown) {
       setShown(true);
       
-      console.log("Menampilkan notifikasi status email terverifikasi");
+      console.log("Displaying email verification status notification");
       
-      // Tampilkan toast notifikasi untuk status email terverifikasi
+      // Show toast notification for verified email status
       toast({
-        title: "Status Email: Terverifikasi ✓",
+        title: "Email Status: Verified ✓",
         description: (
           <div className="flex flex-col">
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">Email Telah Terverifikasi</span>
+              <span className="font-semibold">Email Successfully Verified</span>
             </div>
             <p className="mt-1">
-              Email Anda ({user.email}) telah terverifikasi. Anda memiliki akses penuh ke semua fitur FourByte.
+              Your email ({user.email}) has been verified. You now have full access to all FourByte features.
             </p>
           </div>
         ),
@@ -35,5 +35,5 @@ export function VerificationStatusToast() {
     }
   }, [user, toast, shown]);
 
-  return null; // Komponen ini tidak merender apapun
+  return null; // This component doesn't render anything
 }

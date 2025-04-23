@@ -59,32 +59,32 @@ export function EmailVerificationModal({ open, onOpenChange }: EmailVerification
       if (response.ok) {
         setVerified(true);
         
-        // Tampilkan toast sukses dengan desain yang lebih menonjol
+        // Display success toast with a more prominent design
         toast({
-          title: "Email berhasil diverifikasi! ✓",
-          description: "Sekarang Anda dapat mengakses semua fitur aplikasi FourByte.",
+          title: "Email successfully verified! ✓",
+          description: "You can now access all FourByte application features.",
           variant: "default",
-          duration: 6000, // Durasi lebih lama (6 detik)
+          duration: 6000, // Longer duration (6 seconds)
         });
         
-        // Tambahkan notifikasi pada sistem notifikasi aplikasi
+        // Add notification to the application notification system
         try {
           await apiRequest("POST", "/api/notifications", {
             type: "system_message",
-            title: "Email Terverifikasi",
-            content: "Email Anda telah berhasil diverifikasi. Terima kasih!",
+            title: "Email Verified",
+            content: "Your email has been successfully verified. Thank you!",
             isRead: false
           });
         } catch (err) {
           console.error("Failed to create notification", err);
         }
         
-        // Tunggu sedikit lebih lama sehingga pengguna dapat melihat pesan sukses
+        // Wait a bit longer so users can see the success message
         setTimeout(() => {
           onOpenChange(false);
           
-          // Refresh halaman dengan reload lengkap, menampilkan notifikasi verifikasi email langsung
-          window.location.href = "/?verified=success";
+          // Refresh page with full reload, displaying email verification notification directly
+          window.location.href = "/dashboard?verified=success";
         }, 2000);
       } else {
         const errorData = await response.json();

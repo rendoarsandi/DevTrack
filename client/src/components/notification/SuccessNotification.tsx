@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
 
 interface SuccessNotificationProps {
-  trigger?: string; // Parameter URL yang memicu notifikasi
+  trigger?: string; // URL parameter that triggers the notification
 }
 
 export function SuccessNotification({ trigger = 'verified' }: SuccessNotificationProps) {
@@ -11,7 +11,7 @@ export function SuccessNotification({ trigger = 'verified' }: SuccessNotificatio
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    // Fungsi untuk menangani perubahan URL atau event popstate
+    // Function to handle URL changes or popstate events
     const checkForSuccessParam = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const triggerValue = urlParams.get(trigger);
@@ -19,44 +19,44 @@ export function SuccessNotification({ trigger = 'verified' }: SuccessNotificatio
       if (triggerValue === 'success' && !shown) {
         setShown(true);
         
-        console.log("Menampilkan notifikasi sukses verifikasi email");
+        console.log("Displaying email verification success notification");
         
-        // Tampilkan toast notifikasi yang menonjol
+        // Show prominent toast notification
         toast({
-          title: "Email Berhasil Diverifikasi! ✓",
+          title: "Email Successfully Verified! ✓",
           description: (
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
-                <span className="font-semibold">Verifikasi Berhasil</span>
+                <span className="font-semibold">Verification Successful</span>
               </div>
               <p className="mt-1">
-                Email Anda telah berhasil diverifikasi. Anda dapat menggunakan semua fitur aplikasi FourByte sekarang.
+                Your email has been successfully verified. You can now use all FourByte application features.
               </p>
             </div>
           ),
           variant: "default",
           className: "bg-green-50 border-green-200 text-green-800",
-          duration: 10000, // 10 detik
+          duration: 10000, // 10 seconds
         });
         
-        // Hapus parameter dari URL tanpa reload halaman
+        // Remove parameter from URL without page reload
         const url = new URL(window.location.href);
         url.searchParams.delete(trigger);
         window.history.replaceState({}, document.title, url.toString());
       }
     };
     
-    // Periksa parameter saat komponen di-mount
+    // Check parameters when component mounts
     checkForSuccessParam();
     
-    // Tambahkan event listener untuk mendeteksi perubahan state history
+    // Add event listener to detect history state changes
     window.addEventListener('popstate', checkForSuccessParam);
     
-    // Tambahkan custom event listener untuk trigger manual
+    // Add custom event listener for manual triggering
     const handleVerificationSuccess = () => {
-      setShown(false); // Reset state untuk memungkinkan toast muncul lagi
-      setTimeout(checkForSuccessParam, 100); // Cek dengan sedikit delay
+      setShown(false); // Reset state to allow toast to appear again
+      setTimeout(checkForSuccessParam, 100); // Check with slight delay
     };
     
     window.addEventListener('email-verified', handleVerificationSuccess);
@@ -68,5 +68,5 @@ export function SuccessNotification({ trigger = 'verified' }: SuccessNotificatio
     };
   }, [toast, trigger, shown]);
 
-  return null; // Komponen ini tidak merender apapun di UI
+  return null; // This component doesn't render anything in the UI
 }
