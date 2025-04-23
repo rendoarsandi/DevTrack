@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,7 +48,8 @@ interface Activity {
 }
 
 export default function AdminProjectDetail() {
-  const { id } = useParams<{ id: string }>();
+  const [, params] = useRoute("/admin/projects/:id");
+  const projectId = params?.id || "";
   const [, navigate] = useLocation();
   
   // Fetch project details
