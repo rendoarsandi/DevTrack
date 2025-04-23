@@ -1,11 +1,17 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { 
+  generateVerificationCode, 
+  sendVerificationEmail, 
+  verifyCode, 
+  resendVerificationCode 
+} from "./email-verification";
 
 declare global {
   namespace Express {
@@ -77,23 +83,48 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
-    }
-
     try {
+      // Validasi data
+      if (!req.body.username || !req.body.password || !req.body.email || !req.body.fullName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Periksa username yang sudah ada
+      const existingUsername = await storage.getUserByUsername(req.body.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Periksa email yang sudah ada
+      const existingEmail = await storage.getUserByEmail(req.body.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Buat user baru
       const user = await storage.createUser({
         ...req.body,
         password: await hashPassword(req.body.password),
+        emailVerified: false
       });
 
+      // Kirim email verifikasi
+      await sendVerificationEmail(user.email, user.username);
+
+      // Login user
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        
+        // Hilangkan password dari respons
+        const { password, ...userWithoutPassword } = user;
+        res.status(201).json({
+          ...userWithoutPassword,
+          message: "Registration successful. Please check your email for verification."
+        });
       });
-    } catch (error) {
-      return res.status(400).json({ message: "Invalid user data" });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      return res.status(400).json({ message: error.message || "Invalid user data" });
     }
   });
 
@@ -151,5 +182,82 @@ export function setupAuth(app: Express) {
     });
     
     res.json(req.user);
+  });
+
+  // Endpoint untuk memulai verifikasi email
+  app.post("/api/verify-email/send", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Pastikan user belum diverifikasi
+    if (req.user.emailVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    // Kirim email verifikasi
+    const success = await sendVerificationEmail(req.user.email, req.user.username);
+    
+    if (success) {
+      return res.status(200).json({ message: "Verification email sent" });
+    } else {
+      return res.status(500).json({ message: "Failed to send verification email" });
+    }
+  });
+
+  // Endpoint untuk verifikasi kode
+  app.post("/api/verify-email/verify", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ message: "Verification code is required" });
+    }
+
+    // Verifikasi kode
+    const isValid = verifyCode(req.user.email, code);
+    
+    if (isValid) {
+      // Update status verifikasi email user
+      const updatedUser = await storage.updateUserEmailVerification(req.user.id, true);
+      
+      if (updatedUser) {
+        // Update user dalam session
+        req.login(updatedUser, (err) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to update session" });
+          }
+          return res.status(200).json({ message: "Email verified successfully", user: updatedUser });
+        });
+      } else {
+        return res.status(500).json({ message: "Failed to update user verification status" });
+      }
+    } else {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+  });
+
+  // Endpoint untuk mengirim ulang kode verifikasi
+  app.post("/api/verify-email/resend", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Pastikan user belum diverifikasi
+    if (req.user.emailVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    // Kirim ulang kode verifikasi
+    const success = await resendVerificationCode(req.user.email);
+    
+    if (success) {
+      return res.status(200).json({ message: "Verification code resent" });
+    } else {
+      return res.status(500).json({ message: "Failed to resend verification code" });
+    }
   });
 }
