@@ -608,7 +608,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
               value="feedback" 
               className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
             >
-              <FileIcon className="mr-2 h-4 w-4" />
+              <File className="mr-2 h-4 w-4" />
               Send Media & Files
             </TabsTrigger>
             <TabsTrigger 
@@ -632,7 +632,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                 value="deliverables" 
                 className="py-4 px-1 border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none data-[state=active]:text-primary data-[state=inactive]:border-transparent"
               >
-                <FileIcon className="mr-2 h-4 w-4" />
+                <File className="mr-2 h-4 w-4" />
                 Deliverables
               </TabsTrigger>
             )}
@@ -854,7 +854,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                       {isUploading ? (
                         <Loader2Icon className="h-3 w-3 mr-1 animate-spin" />
                       ) : (
-                        <FileIcon className="h-3 w-3 mr-1" />
+                        <File className="h-3 w-3 mr-1" />
                       )}
                       {isUploading ? "Uploading..." : "Add Files"}
                     </label>
@@ -867,7 +867,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                     {uploadedFiles.map((file, index) => (
                       <li key={index} className="flex items-center justify-between bg-muted/50 rounded-md p-2">
                         <div className="flex items-center overflow-hidden">
-                          <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <File className="h-4 w-4 mr-2 flex-shrink-0" />
                           <span className="text-sm truncate">{file.name}</span>
                         </div>
                         <button
@@ -1021,7 +1021,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                                       )}
                                       <div className="p-2 flex justify-between items-center bg-muted/30">
                                         <div className="flex items-center">
-                                          <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                                          <File className="h-4 w-4 mr-2 flex-shrink-0" />
                                           <span className="text-sm truncate">{displayName}</span>
                                         </div>
                                         <a 
@@ -1098,7 +1098,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                         {isUploading ? (
                           <Loader2Icon className="h-6 w-6 mx-auto text-muted-foreground animate-spin" />
                         ) : (
-                          <FileIcon className="h-6 w-6 mx-auto text-muted-foreground" />
+                          <File className="h-6 w-6 mx-auto text-muted-foreground" />
                         )}
                       </span>
                       <span className="text-sm font-medium">
@@ -1140,7 +1140,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                                   }}
                                 />
                               ) : null}
-                              <FileIcon id={`file-icon-${index}`} className="h-4 w-4 mr-2 flex-shrink-0" style={{display: file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} />
+                              <File id={`file-icon-${index}`} className="h-4 w-4 mr-2 flex-shrink-0" style={{display: file.name.toLowerCase().match(/\.(jpeg|jpg|gif|png)$/) ? 'none' : 'block'}} />
                               <span className="text-sm truncate max-w-[180px]">
                                 {(() => {
                                   try {
@@ -1236,7 +1236,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                 {/* Project Handover Details */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-muted px-4 py-3 border-b border-border flex items-center">
-                    <FileIcon className="h-4 w-4 mr-2 text-primary" />
+                    <File className="h-4 w-4 mr-2 text-primary" />
                     <h3 className="text-sm font-medium">Documentation & Code</h3>
                   </div>
                   
@@ -1280,7 +1280,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-purple-100 text-purple-700 mr-3">
-                                <FileIcon className="h-4 w-4" />
+                                <File className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">Technical Documentation</p>
@@ -1296,7 +1296,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-green-100 text-green-700 mr-3">
-                                <FileIcon className="h-4 w-4" />
+                                <File className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">User Manual</p>
@@ -1312,7 +1312,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                               rel="noopener noreferrer"
                             >
                               <div className="p-2 rounded-full bg-yellow-100 text-yellow-700 mr-3">
-                                <FileIcon className="h-4 w-4" />
+                                <File className="h-4 w-4" />
                               </div>
                               <div>
                                 <p className="text-sm font-medium">Source Code</p>
@@ -1324,7 +1324,7 @@ export function ProjectDetailModal({ projectId, isOpen, onClose, defaultTab = "o
                       </>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
-                        <FileIcon className="h-12 w-12 mx-auto mb-3 text-muted" />
+                        <File className="h-12 w-12 mx-auto mb-3 text-muted" />
                         <p>No handover documents found.</p>
                         <p className="text-sm">Please contact the development team for more information.</p>
                       </div>
