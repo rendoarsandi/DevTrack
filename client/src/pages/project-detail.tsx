@@ -9,7 +9,7 @@ import { TestingDocumentation } from "@/components/project/TestingDocumentation"
 import { EnhancedReviewForm } from "@/components/project/EnhancedReviewForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText, ClipboardCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Rocket, FileText, ClipboardCheck, AlertCircle, MessageSquare, File } from "lucide-react";
 import { Project } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectProgress } from "@/components/project/ProjectProgress";
@@ -343,7 +343,7 @@ export default function ProjectDetail() {
                                   document.body.removeChild(link);
                                 }}
                               >
-                                <MessagesSquare className="mr-2 h-4 w-4" />
+                                <MessageSquare className="mr-2 h-4 w-4" />
                                 <div className="text-left">
                                   <div className="font-medium">Live Chat</div>
                                   <div className="text-xs text-muted-foreground">Real-time conversation with the team</div>
@@ -365,7 +365,7 @@ export default function ProjectDetail() {
                                   document.body.removeChild(link);
                                 }}
                               >
-                                <FileIcon className="mr-2 h-4 w-4" />
+                                <File className="mr-2 h-4 w-4" />
                                 <div className="text-left">
                                   <div className="font-medium">Send Media & Files</div>
                                   <div className="text-xs text-muted-foreground">Share documents and formal communications</div>

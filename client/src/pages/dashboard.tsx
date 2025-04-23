@@ -80,6 +80,30 @@ export default function Dashboard() {
   const handleNewProject = () => {
     navigate("/projects/new");
   };
+  
+  // Add event listener for custom modal open requests from project detail page
+  useEffect(() => {
+    const handleCustomLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a[data-action="open-modal"]');
+      
+      if (link) {
+        e.preventDefault();
+        const projectId = parseInt(link.getAttribute('data-project-id') || '0');
+        const tabName = link.getAttribute('data-tab') || 'overview';
+        
+        if (projectId) {
+          setSelectedProjectId(projectId);
+          setSelectedModalTab(tabName);
+        }
+      }
+    };
+    
+    document.addEventListener('click', handleCustomLinkClick);
+    return () => {
+      document.removeEventListener('click', handleCustomLinkClick);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden">
