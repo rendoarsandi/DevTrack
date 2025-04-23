@@ -125,12 +125,48 @@ export default function ProjectDetail() {
                     </div>
                   </div>
                   
-                  {/* Project details modal for deeper details */}
-                  <ProjectDetailModal
-                    projectId={projectId}
-                    isOpen={true}
-                    onClose={() => navigate("/")}
-                  />
+                  {/* Project details section - No modal needed here */}
+                  <div className="mb-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Project Details</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</h4>
+                            <p className="mt-1 text-sm">{project.description}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Start Date</h4>
+                              <p className="mt-1 text-sm">{new Date(project.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Expected Completion</h4>
+                              <p className="mt-1 text-sm">
+                                {(() => {
+                                  const date = new Date(project.createdAt);
+                                  date.setDate(date.getDate() + (project.timeline * 7));
+                                  return date.toLocaleDateString();
+                                })()}
+                              </p>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget</h4>
+                              <p className="mt-1 text-sm">${project.quote.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Payment Status</h4>
+                              <p className="mt-1 text-sm">
+                                {project.paymentStatus}% paid (${(project.quote * project.paymentStatus / 100).toLocaleString()})
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                   
                   {/* Project review notification - more prominent */}
                   {project.status === "under_review" && (
@@ -241,6 +277,7 @@ export default function ProjectDetail() {
                     <TabsList className="mb-4 w-full">
                       <TabsTrigger value="activity" className="flex-1">Updates</TabsTrigger>
                       <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
+                      <TabsTrigger value="communication" className="flex-1">Communication</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="activity">
@@ -278,6 +315,90 @@ export default function ProjectDetail() {
                             </p>
                           </div>
                         </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="communication">
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Communication Options</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 gap-3">
+                              <Button 
+                                variant="outline" 
+                                className="justify-start"
+                                onClick={() => {
+                                  // Buka modal proyek dengan tab LiveChat
+                                  // Menggunakan ProjectDetailModal sebagai dialog
+                                  // Logic akan ditambahkan nanti
+                                  const link = document.createElement('a');
+                                  link.href = `/`;
+                                  link.setAttribute('data-action', 'open-modal');
+                                  link.setAttribute('data-project-id', projectId.toString());
+                                  link.setAttribute('data-tab', 'chat');
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                <MessagesSquare className="mr-2 h-4 w-4" />
+                                <div className="text-left">
+                                  <div className="font-medium">Live Chat</div>
+                                  <div className="text-xs text-muted-foreground">Real-time conversation with the team</div>
+                                </div>
+                              </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                className="justify-start"
+                                onClick={() => {
+                                  // Buka modal proyek dengan tab Send Media & Files
+                                  const link = document.createElement('a');
+                                  link.href = `/`;
+                                  link.setAttribute('data-action', 'open-modal');
+                                  link.setAttribute('data-project-id', projectId.toString());
+                                  link.setAttribute('data-tab', 'feedback');
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                <FileIcon className="mr-2 h-4 w-4" />
+                                <div className="text-left">
+                                  <div className="font-medium">Send Media & Files</div>
+                                  <div className="text-xs text-muted-foreground">Share documents and formal communications</div>
+                                </div>
+                              </Button>
+
+                              {project.status === "under_review" && (
+                                <Button 
+                                  variant="outline" 
+                                  className="justify-start"
+                                  onClick={() => {
+                                    // Scroll ke form review
+                                    const reviewElement = document.getElementById('review-section');
+                                    if (reviewElement) {
+                                      reviewElement.scrollIntoView({ behavior: 'smooth' });
+                                      // Temukan tab review dan klik
+                                      const reviewTab = document.querySelector('[value="review"]');
+                                      if (reviewTab) {
+                                        (reviewTab as HTMLElement).click();
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                                  <div className="text-left">
+                                    <div className="font-medium">Project Review</div>
+                                    <div className="text-xs text-muted-foreground">Approve or request changes</div>
+                                  </div>
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
                     </TabsContent>
                   </Tabs>

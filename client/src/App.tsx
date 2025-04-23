@@ -25,10 +25,10 @@ import AdminUsers from "@/pages/admin/admin-users";
 import AdminAnalytics from "@/pages/admin/admin-analytics";
 import AdminSettings from "@/pages/admin/admin-settings";
 
-// Wrapper for components that might return null to satisfy Route's component type requirement
+// Correct implementation for project detail route
 const SafeProjectDetail = () => {
-  const component = ProjectDetail();
-  return component || <div>Loading...</div>;
+  // No need to call ProjectDetail as a function, it's already a React component
+  return <ProjectDetail />;
 };
 
 function Router() {

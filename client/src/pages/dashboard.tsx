@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<string>("all");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedModalTab, setSelectedModalTab] = useState<string>("overview");
   
   // Load projects
   const { 
