@@ -775,7 +775,7 @@ export default function AdminProjectDetail() {
                                 })
                                 .then(() => {
                                   queryClient.invalidateQueries({
-                                    queryKey: [`/api/projects/${id}/milestones`],
+                                    queryKey: [`/api/projects/${projectId}/milestones`],
                                   });
                                   
                                   // Also update project progress
@@ -789,7 +789,7 @@ export default function AdminProjectDetail() {
                                   })
                                   .then(() => {
                                     queryClient.invalidateQueries({
-                                      queryKey: [`/api/admin/projects/${id}`],
+                                      queryKey: [`/api/admin/projects/${projectId}`],
                                     });
                                     queryClient.invalidateQueries({
                                       queryKey: ["/api/admin/projects"],
@@ -820,7 +820,7 @@ export default function AdminProjectDetail() {
                                   apiRequest("DELETE", `/api/projects/${projectId}/milestones/${milestone.id}`)
                                   .then(() => {
                                     queryClient.invalidateQueries({
-                                      queryKey: [`/api/projects/${id}/milestones`],
+                                      queryKey: [`/api/projects/${projectId}/milestones`],
                                     });
                                     toast({
                                       title: "Milestone deleted",
@@ -949,7 +949,7 @@ export default function AdminProjectDetail() {
                 onComplete={() => {
                   // Refresh data after review is submitted
                   queryClient.invalidateQueries({
-                    queryKey: [`/api/admin/projects/${id}`],
+                    queryKey: [`/api/admin/projects/${projectId}`],
                   });
                   
                   toast({
