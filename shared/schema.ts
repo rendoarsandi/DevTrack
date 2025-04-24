@@ -47,6 +47,16 @@ export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull().references(() => projects.id),
   content: text("content").notNull(),
+  rating: integer("rating"), // Optional rating 1-5
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const feedbackTokens = pgTable("feedback_tokens", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expires_at"),
+  isUsed: boolean("is_used").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -207,6 +217,15 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
 export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   projectId: true,
   content: true,
+}).extend({
+  rating: z.number().min(1).max(5).optional(),
+});
+
+export const insertFeedbackTokenSchema = createInsertSchema(feedbackTokens).pick({
+  projectId: true,
+}).extend({
+  token: z.string().optional(), // Will be generated if not provided
+  expiresAt: z.date().optional(), // Will default to 7 days from now if not provided
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
@@ -326,6 +345,7 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type InsertFeedbackToken = z.infer<typeof insertFeedbackTokenSchema>;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
@@ -353,6 +373,7 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type Feedback = typeof feedback.$inferSelect;
+export type FeedbackToken = typeof feedbackTokens.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Milestone = typeof milestones.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
