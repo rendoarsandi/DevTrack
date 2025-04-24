@@ -16,7 +16,7 @@ import type {
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
-import { eq, desc, inArray, and, asc, count, like } from "drizzle-orm";
+import { eq, desc, inArray, and, asc, count, like, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import createMemoryStore from "memorystore";
@@ -558,13 +558,13 @@ export class DatabaseStorage implements IStorage {
       const day = String(date.getDate()).padStart(2, '0');
       
       // Get count of invoices for today to generate sequential number
-      const todayInvoices = await db
+      const todayInvoices: { count: number }[] = await db
         .select({ count: count() })
         .from(invoices)
-        .where(invoices.invoiceNumber.like(`INV-${year}${month}${day}-%`));
+        .where(sql`${invoices.invoiceNumber} LIKE ${`INV-${year}${month}${day}-%`}`);
       
-      const count = (todayInvoices[0]?.count || 0) + 1;
-      const sequentialNumber = String(count).padStart(4, '0');
+      const invoiceCount = (todayInvoices[0]?.count || 0) + 1;
+      const sequentialNumber = String(invoiceCount).padStart(4, '0');
       
       insertInvoice.invoiceNumber = `INV-${year}${month}${day}-${sequentialNumber}`;
     }
@@ -599,7 +599,7 @@ export class DatabaseStorage implements IStorage {
     if (!invoice) return undefined;
     
     const updateValues: Partial<Invoice> = {};
-    let notificationType: "payment_update" | "invoice_created" = "payment_update";
+    let notificationType: "payment_update" | "invoice_created" | "payment_received" = "payment_update";
     let notificationTitle = "Invoice Updated";
     let notificationMessage = `Your invoice (${invoice.invoiceNumber}) has been updated.`;
     
