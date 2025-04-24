@@ -1028,7 +1028,7 @@ export default function AdminProjectDetail() {
                     }
                     
                     // Submit handover feedback
-                    apiRequest(`/api/projects/${projectId}/feedback`, {
+                    apiRequest<any>(`/api/projects/${projectId}/feedback`, {
                       method: "POST",
                       body: JSON.stringify({
                         content: `PROJECT HANDOVER: ${handoverMessage}`
