@@ -1330,11 +1330,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (event === "invoice.paid") {
         const xenditInvoiceId = data.id;
         
-        // Cari invoice berdasarkan Xendit ID
-        const [invoice] = await db
-          .select()
-          .from(invoices)
-          .where(eq(invoices.xenditInvoiceId, xenditInvoiceId));
+        // Cari invoice berdasarkan metadata.xenditId
+        const allInvoices = await db.select().from(invoices);
+        const invoice = allInvoices.find(inv => 
+          inv.metadata && 
+          typeof inv.metadata === 'object' && 
+          inv.metadata.xenditId === xenditInvoiceId
+        );
         
         if (invoice) {
           // Update status invoice menjadi paid
@@ -1342,7 +1344,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: invoice.id,
             status: "paid",
             paidDate: new Date(),
-            paidAmount: invoice.amount
+            paidAmount: invoice.amount,
+            metadata: { ...invoice.metadata, xenditPaymentData: data }
           });
           
           // Tambahkan payment record
