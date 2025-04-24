@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useState } from 'react';
-import { toast } from '@hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 // Tipe untuk DashboardWidget dari server
 export interface DashboardWidget {
@@ -75,11 +75,13 @@ export const useUserWidgets = () => {
 
 // Hook untuk menambahkan widget baru ke dashboard user
 export const useAddWidget = () => {
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: (widgetData: AddWidgetInput) => 
       apiRequest('/api/user-widgets', {
         method: 'POST',
-        data: widgetData
+        body: JSON.stringify(widgetData)
       }),
     onSuccess: () => {
       // Invalidate cache setelah berhasil menambahkan widget
@@ -106,11 +108,12 @@ export const useUpdateWidget = () => {
     mutationFn: ({ id, data }: { id: number, data: UpdateWidgetInput }) => 
       apiRequest(`/api/user-widgets/${id}`, {
         method: 'PATCH',
-        data
+        body: JSON.stringify(data)
       }),
     onSuccess: () => {
       // Invalidate cache setelah berhasil mengupdate widget
       queryClient.invalidateQueries({ queryKey: ['/api/user-widgets'] });
+      const { toast } = useToast();
       toast({
         title: 'Widget diperbarui',
         description: 'Perubahan berhasil disimpan',
@@ -118,6 +121,7 @@ export const useUpdateWidget = () => {
       });
     },
     onError: (error) => {
+      const { toast } = useToast();
       toast({
         title: 'Gagal memperbarui widget',
         description: error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui widget',
@@ -137,6 +141,7 @@ export const useDeleteWidget = () => {
     onSuccess: () => {
       // Invalidate cache setelah berhasil menghapus widget
       queryClient.invalidateQueries({ queryKey: ['/api/user-widgets'] });
+      const { toast } = useToast();
       toast({
         title: 'Widget dihapus',
         description: 'Widget berhasil dihapus dari dashboard Anda',
@@ -144,6 +149,7 @@ export const useDeleteWidget = () => {
       });
     },
     onError: (error) => {
+      const { toast } = useToast();
       toast({
         title: 'Gagal menghapus widget',
         description: error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus widget',

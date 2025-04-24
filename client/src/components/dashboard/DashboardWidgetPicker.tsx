@@ -15,7 +15,7 @@ import {
   BarChart2 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DashboardWidget, AddWidgetInput, useWidgets } from '@hooks/use-widgets';
+import { DashboardWidget, AddWidgetInput, useWidgets } from '@/hooks/use-widgets';
 
 // Map tipe widget ke ikon
 const iconMap: Record<string, any> = {

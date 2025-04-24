@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DashboardWidget } from './DashboardWidget';
 import { DashboardWidgetPicker } from './DashboardWidgetPicker';
-import { useWidgets, UserWidget, DashboardWidget as DashboardWidgetType } from '@hooks/use-widgets';
+import { useWidgets, UserWidget, DashboardWidget as DashboardWidgetType } from '@/hooks/use-widgets';
 import { Pencil, Plus, Save, X } from 'lucide-react';
-import { useToast } from '@hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function CustomizableDashboard() {
   const { userWidgets, availableWidgets, isLoading, updateWidget } = useWidgets();

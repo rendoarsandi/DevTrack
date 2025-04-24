@@ -21,8 +21,8 @@ import {
   BarChart2,
   Icon as LucideIcon
 } from 'lucide-react';
-import { UserWidget, useUpdateWidget, useDeleteWidget } from '@hooks/use-widgets';
-import { cn } from '@lib/utils';
+import { UserWidget, useUpdateWidget, useDeleteWidget } from '@/hooks/use-widgets';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 // Map tipe widget ke ikon

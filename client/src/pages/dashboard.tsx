@@ -34,6 +34,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedAppear } from "@/components/ui/animated-appear";
+import { CustomizableDashboard } from "@/components/dashboard/CustomizableDashboard";
 
 export default function Dashboard() {
   const [location, navigate] = useLocation();
@@ -340,8 +341,25 @@ export default function Dashboard() {
                   </div>
                 </AnimatedAppear>
                 
-                {/* Recent Activities Section */}
+                {/* Customizable Dashboard Section */}
                 <AnimatedAppear delay={0.3}>
+                  <div className="mb-8 bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-border">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <div>
+                          <h2 className="text-xl font-heading font-bold text-foreground">My Dashboard</h2>
+                          <p className="text-sm text-muted-foreground">Customize your dashboard with widgets</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <CustomizableDashboard />
+                    </div>
+                  </div>
+                </AnimatedAppear>
+                
+                {/* Recent Activities Section */}
+                <AnimatedAppear delay={0.4}>
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-heading font-bold text-foreground">Recent Activity</h2>
