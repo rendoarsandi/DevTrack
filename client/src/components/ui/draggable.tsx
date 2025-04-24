@@ -1,7 +1,7 @@
 import React, { ReactNode, useState, useRef, useEffect, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-export interface DraggableProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface DraggableProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDragEnd'> {
   children: ReactNode;
   onDragEnd?: (x: number, y: number) => void;
   initialPosition?: { x: number, y: number };
@@ -22,7 +22,7 @@ export const Draggable = forwardRef<HTMLDivElement, DraggableProps>(({
 }, ref) => {
   const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
-  const elementRef = useRef<HTMLDivElement>(null);
+  const elementRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const initialPosRef = useRef({ x: 0, y: 0 });
   
@@ -104,14 +104,27 @@ export const Draggable = forwardRef<HTMLDivElement, DraggableProps>(({
     };
   }, [isDragging]);
   
+  // Set up the ref forwarding
+  const setRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      // Set the local ref
+      elementRef.current = node;
+      
+      // Forward to the passed ref
+      if (ref) {
+        if (typeof ref === 'function') {
+          ref(node);
+        } else {
+          ref.current = node;
+        }
+      }
+    },
+    [ref]
+  );
+
   return (
     <div
-      ref={(node) => {
-        // Handle both forwardRef and local ref
-        if (typeof ref === 'function') ref(node);
-        else if (ref) ref.current = node;
-        elementRef.current = node;
-      }}
+      ref={setRefs}
       className={cn(
         'absolute',
         isDragging && 'cursor-grabbing',

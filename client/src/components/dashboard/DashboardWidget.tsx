@@ -146,12 +146,12 @@ export function DashboardWidget({
         <CardContent>
           {/* Placeholder content - to be replaced with actual widget content */}
           <div className="text-center py-4 text-muted-foreground">
-            {widget.type === 'project_status' ? (
+            {dashboardWidget?.type === 'project_status' ? (
               <div className="text-center">
                 <div className="text-2xl font-bold">Completed</div>
                 <div className="text-sm">Last updated: Today</div>
               </div>
-            ) : widget.type === 'project_progress' ? (
+            ) : dashboardWidget?.type === 'project_progress' ? (
               <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full mt-2">
                 <div 
                   className="bg-primary h-4 rounded-full" 

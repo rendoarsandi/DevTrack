@@ -104,6 +104,8 @@ export const useAddWidget = () => {
 
 // Hook untuk memperbarui widget
 export const useUpdateWidget = () => {
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: ({ id, data }: { id: number, data: UpdateWidgetInput }) => 
       apiRequest(`/api/user-widgets/${id}`, {
@@ -113,7 +115,6 @@ export const useUpdateWidget = () => {
     onSuccess: () => {
       // Invalidate cache setelah berhasil mengupdate widget
       queryClient.invalidateQueries({ queryKey: ['/api/user-widgets'] });
-      const { toast } = useToast();
       toast({
         title: 'Widget diperbarui',
         description: 'Perubahan berhasil disimpan',
@@ -121,7 +122,6 @@ export const useUpdateWidget = () => {
       });
     },
     onError: (error) => {
-      const { toast } = useToast();
       toast({
         title: 'Gagal memperbarui widget',
         description: error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui widget',
@@ -133,6 +133,8 @@ export const useUpdateWidget = () => {
 
 // Hook untuk menghapus widget
 export const useDeleteWidget = () => {
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: (id: number) => 
       apiRequest(`/api/user-widgets/${id}`, {
@@ -141,7 +143,6 @@ export const useDeleteWidget = () => {
     onSuccess: () => {
       // Invalidate cache setelah berhasil menghapus widget
       queryClient.invalidateQueries({ queryKey: ['/api/user-widgets'] });
-      const { toast } = useToast();
       toast({
         title: 'Widget dihapus',
         description: 'Widget berhasil dihapus dari dashboard Anda',
@@ -149,7 +150,6 @@ export const useDeleteWidget = () => {
       });
     },
     onError: (error) => {
-      const { toast } = useToast();
       toast({
         title: 'Gagal menghapus widget',
         description: error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus widget',
