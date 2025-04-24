@@ -1675,5 +1675,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ============ DASHBOARD WIDGET API ENDPOINTS ============
+  
+  // Get available dashboard widgets for current user role
+  app.get("/api/dashboard-widgets", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get widgets based on user role
+      const widgets = await storage.getDashboardWidgetsByRole(req.user.role);
+      return res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching dashboard widgets:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create dashboard widget definition (admin only)
+  app.post("/api/dashboard-widgets", adminAuthMiddleware, async (req, res) => {
+    try {
+      const newWidget = await storage.createDashboardWidget(req.body);
+      return res.status(201).json(newWidget);
+    } catch (error) {
+      console.error("Error creating dashboard widget:", error);
+      return res.status(500).json({ message: "Failed to create dashboard widget" });
+    }
+  });
+  
+  // Get user's widgets configuration
+  app.get("/api/user-widgets", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userWidgets = await storage.getUserWidgets(req.user.id);
+      return res.json(userWidgets);
+    } catch (error) {
+      console.error("Error fetching user widgets:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Add a widget to user's dashboard
+  app.post("/api/user-widgets", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const widgetData = {
+        ...req.body,
+        userId: req.user.id
+      };
+      
+      const newUserWidget = await storage.createUserWidget(widgetData);
+      return res.status(201).json(newUserWidget);
+    } catch (error) {
+      console.error("Error creating user widget:", error);
+      return res.status(500).json({ message: "Failed to add widget to dashboard" });
+    }
+  });
+  
+  // Update user widget configuration
+  app.patch("/api/user-widgets/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const widgetId = parseInt(req.params.id);
+    if (isNaN(widgetId)) {
+      return res.status(400).json({ message: "Invalid widget ID" });
+    }
+    
+    try {
+      // Verify widget ownership
+      const widget = await storage.getUserWidget(widgetId);
+      if (!widget) {
+        return res.status(404).json({ message: "Widget not found" });
+      }
+      
+      if (widget.userId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this widget" });
+      }
+      
+      const updateData = {
+        id: widgetId,
+        ...req.body
+      };
+      
+      const updatedWidget = await storage.updateUserWidget(updateData);
+      return res.json(updatedWidget);
+    } catch (error) {
+      console.error("Error updating user widget:", error);
+      return res.status(500).json({ message: "Failed to update widget" });
+    }
+  });
+  
+  // Delete user widget
+  app.delete("/api/user-widgets/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const widgetId = parseInt(req.params.id);
+    if (isNaN(widgetId)) {
+      return res.status(400).json({ message: "Invalid widget ID" });
+    }
+    
+    try {
+      // Verify widget ownership
+      const widget = await storage.getUserWidget(widgetId);
+      if (!widget) {
+        return res.status(404).json({ message: "Widget not found" });
+      }
+      
+      if (widget.userId !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this widget" });
+      }
+      
+      await storage.deleteUserWidget(widgetId);
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting user widget:", error);
+      return res.status(500).json({ message: "Failed to delete widget" });
+    }
+  });
+  
   return httpServer;
 }
