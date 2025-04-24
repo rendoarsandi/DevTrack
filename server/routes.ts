@@ -8,6 +8,7 @@ import { setupFileUpload } from "./upload";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import { sendVerificationEmail, verifyCode, resendVerificationCode } from "./email-verification";
+import { createOrder, capturePayment, getOrderDetails } from "./paypal";
 import { 
   insertProjectSchema, updateProjectSchema, 
   insertFeedbackSchema, insertFeedbackTokenSchema, insertMilestoneSchema, 
@@ -1516,6 +1517,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valid: false,
         message: "Internal server error" 
       });
+    }
+  });
+
+  // PayPal endpoints
+  
+  // 1. Membuat order PayPal baru
+  app.post("/api/paypal/create-order", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const { invoiceId } = req.body;
+      
+      if (!invoiceId) {
+        return res.status(400).json({ message: "Invoice ID is required" });
+      }
+      
+      const invoice = await storage.getInvoice(parseInt(invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Pastikan pengguna adalah client yang memiliki invoice atau admin
+      if (req.user.role !== "admin" && invoice.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      // Buat item untuk order PayPal
+      const items = [
+        {
+          name: invoice.title,
+          description: invoice.description.substring(0, 127), // PayPal membatasi deskripsi hingga 127 karakter
+          amount: invoice.amount
+        }
+      ];
+      
+      // Buat order PayPal
+      const order = await createOrder(items, invoice.amount, "USD", invoice.invoiceNumber);
+      
+      // Update invoice dengan ID order PayPal
+      await storage.updateInvoice({
+        id: invoice.id,
+        paypalOrderId: order.id,
+        paypalOrderStatus: order.status
+      });
+      
+      return res.json({
+        orderId: order.id,
+        status: order.status,
+        links: order.links
+      });
+    } catch (error) {
+      console.error("Error creating PayPal order:", error);
+      return res.status(500).json({ message: "Failed to create PayPal order" });
+    }
+  });
+  
+  // 2. Menangkap pembayaran PayPal setelah disetujui oleh pengguna
+  app.post("/api/paypal/capture-payment", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { orderId, invoiceId } = req.body;
+      
+      if (!orderId || !invoiceId) {
+        return res.status(400).json({ message: "Order ID and Invoice ID are required" });
+      }
+      
+      const invoice = await storage.getInvoice(parseInt(invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Pastikan pengguna adalah client yang memiliki invoice atau admin
+      if (req.user.role !== "admin" && invoice.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      // Tangkap pembayaran
+      const captureData = await capturePayment(orderId);
+      
+      // Periksa status pembayaran
+      if (captureData.status === 'COMPLETED') {
+        // Update invoice menjadi paid
+        await storage.updateInvoice({
+          id: invoice.id,
+          status: "paid",
+          paidDate: new Date(),
+          paidAmount: invoice.amount,
+          paypalOrderStatus: captureData.status,
+          metadata: { paypalCaptureData: captureData }
+        });
+        
+        // Tambahkan payment record
+        await storage.createPayment({
+          invoiceId: invoice.id,
+          projectId: invoice.projectId,
+          clientId: invoice.clientId,
+          amount: invoice.amount,
+          method: "paypal",
+          status: "success",
+          transactionId: captureData.id,
+          notes: "Paid via PayPal",
+          metadata: captureData
+        });
+        
+        return res.json({
+          success: true,
+          status: captureData.status,
+          transactionId: captureData.id
+        });
+      } else {
+        return res.json({
+          success: false,
+          status: captureData.status,
+          message: "Payment not completed"
+        });
+      }
+    } catch (error) {
+      console.error("Error capturing PayPal payment:", error);
+      return res.status(500).json({ message: "Failed to capture payment" });
+    }
+  });
+  
+  // 3. Mendapatkan status order PayPal
+  app.get("/api/paypal/order-status/:orderId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { orderId } = req.params;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Order ID is required" });
+      }
+      
+      // Dapatkan detail order
+      const orderDetails = await getOrderDetails(orderId);
+      
+      return res.json({
+        status: orderDetails.status,
+        details: orderDetails
+      });
+    } catch (error) {
+      console.error("Error getting PayPal order details:", error);
+      return res.status(500).json({ message: "Failed to get order details" });
     }
   });
   
