@@ -1330,13 +1330,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (event === "invoice.paid") {
         const xenditInvoiceId = data.id;
         
-        // Cari invoice berdasarkan metadata.xenditId
+        // Cari invoice berdasarkan metadata yang mengandung xenditId
         const allInvoices = await db.select().from(invoices);
-        const invoice = allInvoices.find(inv => 
-          inv.metadata && 
-          typeof inv.metadata === 'object' && 
-          inv.metadata.xenditId === xenditInvoiceId
-        );
+        const invoice = allInvoices.find(inv => {
+          if (!inv.metadata || typeof inv.metadata !== 'object') return false;
+          
+          // Pastikan metadata adalah object dan convert ke tipe yang aman
+          const metadata = inv.metadata as Record<string, any>;
+          return metadata.xenditId === xenditInvoiceId;
+        });
         
         if (invoice) {
           // Update status invoice menjadi paid
@@ -1345,7 +1347,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "paid",
             paidDate: new Date(),
             paidAmount: invoice.amount,
-            metadata: { ...invoice.metadata, xenditPaymentData: data }
+            metadata: { 
+              // Hanya copy metadata yang sudah ada jika itu adalah object
+              ...(invoice.metadata && typeof invoice.metadata === 'object' 
+                ? Object.fromEntries(Object.entries(invoice.metadata as object)) 
+                : {}),
+              xenditPaymentData: data 
+            }
           });
           
           // Tambahkan payment record

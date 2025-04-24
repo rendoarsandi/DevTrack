@@ -28,6 +28,10 @@ export async function createOrder(items: any[], amount: number, currency = 'USD'
   // Tentukan format untuk request
   request.prefer("return=representation");
   
+  // Konversi Rupiah ke USD (rate approx 1 USD = 15000 IDR)
+  const exchangeRate = 15000;
+  const amountInUSD = parseFloat((amount / exchangeRate).toFixed(2));
+  
   // Set request body
   request.requestBody({
     intent: 'CAPTURE', // Pilihan lain: AUTHORIZE
@@ -37,23 +41,26 @@ export async function createOrder(items: any[], amount: number, currency = 'USD'
       description: "FourByte Project Payment",
       amount: {
         currency_code: currency,
-        value: (amount / 100).toFixed(2), // Konversi dari sen ke dolar untuk PayPal
+        value: amountInUSD.toFixed(2),
         breakdown: {
           item_total: {
             currency_code: currency,
-            value: (amount / 100).toFixed(2)
+            value: amountInUSD.toFixed(2)
           }
         }
       },
-      items: items.map(item => ({
-        name: item.name,
-        unit_amount: {
-          currency_code: currency,
-          value: (item.amount / 100).toFixed(2)
-        },
-        quantity: '1',
-        description: item.description || ''
-      }))
+      items: items.map(item => {
+        const itemAmount = parseFloat((item.amount / exchangeRate).toFixed(2));
+        return {
+          name: item.name,
+          unit_amount: {
+            currency_code: currency,
+            value: itemAmount.toFixed(2)
+          },
+          quantity: '1',
+          description: item.description || ''
+        };
+      })
     }],
     application_context: {
       user_action: 'PAY_NOW',

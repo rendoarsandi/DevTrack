@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   PayPalScriptProvider, 
   PayPalButtons,
@@ -153,8 +153,9 @@ const ButtonWrapper = ({
 
 // Komponen PayPal utama
 export default function PayPalCheckout(props: PayPalCheckoutProps) {
-  // Memformat jumlah ke format USD (dollar)
-  const formattedAmount = (props.amount / 14000).toFixed(2);
+  // Konversi Rupiah ke USD (menggunakan rate yang sama dengan server)
+  const exchangeRate = 15000;
+  const amountInUSD = parseFloat((props.amount / exchangeRate).toFixed(2));
   
   return (
     <div className="w-full">
@@ -167,13 +168,13 @@ export default function PayPalCheckout(props: PayPalCheckoutProps) {
       >
         <ButtonWrapper
           {...props}
-          amount={parseFloat(formattedAmount)}
+          amount={amountInUSD}
         />
       </PayPalScriptProvider>
       
       <div className="mt-4 text-xs text-gray-500 text-center">
         <p>
-          Nilai pembayaran: ${formattedAmount} {props.currency || 'USD'} 
+          Nilai pembayaran: ${amountInUSD.toFixed(2)} {props.currency || 'USD'} 
           (Rp {props.amount.toLocaleString('id-ID')})
         </p>
         <p className="mt-1">
