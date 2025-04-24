@@ -47,11 +47,11 @@ export function EmotionSlider({ projectId, onSubmit, onCancel, className }: Emot
   
   // Helper to get emoji based on value
   const getEmotionIcon = (value: number, size: number = 20) => {
-    if (value < 20) return <FrownPlus size={size} className="text-red-500" />;
+    if (value < 20) return <ThumbsDown size={size} className="text-red-500" />;
     if (value < 40) return <Frown size={size} className="text-orange-500" />;
     if (value < 60) return <Meh size={size} className="text-yellow-500" />;
     if (value < 80) return <Smile size={size} className="text-green-500" />;
-    return <SmilePlus size={size} className="text-emerald-500" />;
+    return <ThumbsUp size={size} className="text-emerald-500" />;
   };
   
   const handleSliderChange = (name: keyof EmotionFeedback, value: number[]) => {

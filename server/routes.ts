@@ -15,7 +15,7 @@ import {
   updateMilestoneSchema, insertNotificationSchema,
   updateNotificationSchema, insertInvoiceSchema, updateInvoiceSchema,
   insertPaymentSchema, projects, activities, insertActivitySchema,
-  invoices, payments
+  invoices, payments, insertEmotionFeedbackSchema, emotionFeedback
 } from "@shared/schema";
 import { z } from "zod";
 import { parse } from "url";
