@@ -1,11 +1,12 @@
 import { 
   users, projects, feedback, activities, milestones, 
-  notifications, invoices, payments, chatMessages 
+  notifications, invoices, payments, chatMessages, feedbackTokens
 } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Project, InsertProject, UpdateProject,
-  Feedback, InsertFeedback, 
+  Feedback, InsertFeedback,
+  FeedbackToken, InsertFeedbackToken,
   Activity, InsertActivity,
   Milestone, InsertMilestone, UpdateMilestone,
   Notification, InsertNotification, UpdateNotification,
@@ -15,10 +16,11 @@ import type {
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
-import { eq, desc, inArray, and, asc, count } from "drizzle-orm";
+import { eq, desc, inArray, and, asc, count, like } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import createMemoryStore from "memorystore";
+import crypto from "crypto";
 
 const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
@@ -43,6 +45,12 @@ export interface IStorage {
   // Feedback methods
   getFeedbackByProject(projectId: number): Promise<Feedback[]>;
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  
+  // Feedback Token methods
+  createFeedbackToken(token: InsertFeedbackToken): Promise<FeedbackToken>;
+  getFeedbackToken(token: string): Promise<FeedbackToken | undefined>;
+  getFeedbackTokensByProject(projectId: number): Promise<FeedbackToken[]>;
+  markFeedbackTokenAsUsed(token: string): Promise<FeedbackToken | undefined>;
   
   // Activity methods
   getActivitiesByClient(clientId: number): Promise<Activity[]>;
@@ -253,6 +261,58 @@ export class DatabaseStorage implements IStorage {
     });
     
     return newFeedback;
+  }
+  
+  // Feedback Token methods
+  async createFeedbackToken(token: InsertFeedbackToken): Promise<FeedbackToken> {
+    // Generate random token if not provided
+    const tokenValue = token.token || crypto.randomUUID().replace(/-/g, '');
+    
+    // Set expiration to 7 days from now if not provided
+    const expiresAt = token.expiresAt || (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 7);
+      return date;
+    })();
+    
+    const [newToken] = await db
+      .insert(feedbackTokens)
+      .values({
+        projectId: token.projectId,
+        token: tokenValue,
+        expiresAt: expiresAt,
+        isUsed: false
+      })
+      .returning();
+      
+    return newToken;
+  }
+  
+  async getFeedbackToken(token: string): Promise<FeedbackToken | undefined> {
+    const [feedbackToken] = await db
+      .select()
+      .from(feedbackTokens)
+      .where(eq(feedbackTokens.token, token));
+      
+    return feedbackToken || undefined;
+  }
+  
+  async getFeedbackTokensByProject(projectId: number): Promise<FeedbackToken[]> {
+    return await db
+      .select()
+      .from(feedbackTokens)
+      .where(eq(feedbackTokens.projectId, projectId))
+      .orderBy(desc(feedbackTokens.createdAt));
+  }
+  
+  async markFeedbackTokenAsUsed(token: string): Promise<FeedbackToken | undefined> {
+    const [updatedToken] = await db
+      .update(feedbackTokens)
+      .set({ isUsed: true })
+      .where(eq(feedbackTokens.token, token))
+      .returning();
+      
+    return updatedToken || undefined;
   }
 
   // Activity methods
