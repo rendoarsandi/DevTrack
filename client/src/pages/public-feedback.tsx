@@ -1,240 +1,118 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { CheckCircle, AlertTriangle, Star } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmotionFeedbackButton, EmotionSlider, EmotionFeedback } from '@/components/feedback';
+import { useToast } from '@/hooks/use-toast';
 
-const feedbackSchema = z.object({
-  content: z.string().min(10, "Feedback must be at least 10 characters"),
-  rating: z.string().optional(),
-});
+export default function PublicFeedbackPage() {
+  const { toast } = useToast();
+  const [directFeedbackVisible, setDirectFeedbackVisible] = useState(false);
 
-type FeedbackFormValues = z.infer<typeof feedbackSchema>;
-
-export default function PublicFeedback() {
-  const [, navigate] = useLocation();
-  const [success, setSuccess] = useState(false);
-  
-  // Extract token from URL
-  const token = window.location.pathname.split("/").pop() || "";
-  
-  interface TokenValidationResponse {
-    valid: boolean;
-    message?: string;
-    projectId?: number;
-    projectTitle?: string;
-    expiresAt?: string;
-  }
-  
-  interface FeedbackResponse {
-    message: string;
-    feedback: any;
-  }
-  
-  // Validate token
-  const { data: tokenData, isLoading: isValidating, error: tokenError } = useQuery({
-    queryKey: [`/api/public/feedback/${token}/validate`],
-    queryFn: () => apiRequest<TokenValidationResponse>(`/api/public/feedback/${token}/validate`),
-    retry: false,
-  });
-  
-  const form = useForm<FeedbackFormValues>({
-    resolver: zodResolver(feedbackSchema),
-    defaultValues: {
-      content: "",
-      rating: undefined,
-    },
-  });
-  
-  const submitFeedback = useMutation({
-    mutationFn: (values: FeedbackFormValues) => {
-      return apiRequest<FeedbackResponse>(`/api/public/feedback/${token}`, {
-        method: "POST",
-        body: JSON.stringify({
-          content: values.content,
-          rating: values.rating,
-        }),
-      });
-    },
-    onSuccess: () => {
-      setSuccess(true);
-    },
-  });
-  
-  const onSubmit = (values: FeedbackFormValues) => {
-    submitFeedback.mutate(values);
+  const handleDirectFeedbackToggle = () => {
+    setDirectFeedbackVisible(!directFeedbackVisible);
   };
-  
-  // Show redirection message and navigate home after 3 seconds when success
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
-        navigate("/");
-      }, 5000);
-      
-      return () => clearTimeout(timer);
+
+  const handleFeedbackSubmit = (feedback: EmotionFeedback) => {
+    toast({
+      title: 'Feedback Submitted',
+      description: `Thank you for your feedback! Satisfaction: ${feedback.satisfaction}%`,
+    });
+    
+    // Hide the direct feedback form after submission
+    if (directFeedbackVisible) {
+      setDirectFeedbackVisible(false);
     }
-  }, [success, navigate]);
-  
-  // Loading state
-  if (isValidating) {
-    return (
-      <div className="container max-w-md mx-auto mt-16 px-4">
+  };
+
+  return (
+    <div className="container py-8 max-w-5xl">
+      <h1 className="text-3xl font-bold mb-6">Quick Feedback</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* Card explaining the concept */}
         <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Validating Feedback Link</CardTitle>
-            <CardDescription>Please wait while we validate your feedback link</CardDescription>
+          <CardHeader>
+            <CardTitle>About Emotion Feedback</CardTitle>
+            <CardDescription>
+              We've implemented a simple yet powerful way to collect user sentiment
+            </CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center py-8">
-            <LoadingSpinner size="lg" />
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              The Quick Feedback Emotion Sliders provide an intuitive way for users to express 
+              how they feel about different aspects of a product or service. This helps gather 
+              more nuanced feedback compared to simple star ratings.
+            </p>
+            <p className="text-muted-foreground mb-4">
+              Users can rate their satisfaction, the usability, the design, and the performance 
+              using simple sliders that translate emotions into data.
+            </p>
+            <div className="flex space-x-4 mt-6">
+              <EmotionFeedbackButton 
+                onFeedbackSubmit={handleFeedbackSubmit}
+                buttonText="Quick Feedback Modal"
+                variant="default"
+              />
+              <Button 
+                variant="outline"
+                onClick={handleDirectFeedbackToggle}
+              >
+                {directFeedbackVisible ? 'Hide Direct Feedback' : 'Show Direct Feedback'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card showing implementation options */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Implementation Options</CardTitle>
+            <CardDescription>
+              Multiple ways to integrate emotion feedback into your application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-muted-foreground list-disc pl-5">
+              <li>
+                <strong>Modal Popup:</strong> Trigger the feedback form from anywhere using the EmotionFeedbackButton
+              </li>
+              <li>
+                <strong>Direct Embedding:</strong> Embed the EmotionSlider component directly in your pages
+              </li>
+              <li>
+                <strong>Project Association:</strong> Link feedback to specific projects by passing the projectId
+              </li>
+              <li>
+                <strong>Custom Styling:</strong> All components support custom styling via className props
+              </li>
+              <li>
+                <strong>Callback Integration:</strong> Use onSubmit callbacks to handle feedback data custom logic
+              </li>
+            </ul>
+            
+            <div className="mt-6 border rounded p-4 bg-muted/20">
+              <code className="text-xs">
+                {`<EmotionFeedbackButton
+  projectId={123}
+  onFeedbackSubmit={handleFeedback}
+  buttonText="Rate your experience"
+  variant="default"
+/>`}
+              </code>
+            </div>
           </CardContent>
         </Card>
       </div>
-    );
-  }
-  
-  // Invalid token
-  if (tokenError || (tokenData && !tokenData.valid)) {
-    return (
-      <div className="container max-w-md mx-auto mt-16 px-4">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Invalid Feedback Link</AlertTitle>
-          <AlertDescription>
-            {tokenData?.message || "This feedback link is invalid or has expired."}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate("/")} className="w-full">
-          Go to Homepage
-        </Button>
-      </div>
-    );
-  }
-  
-  // Success state
-  if (success) {
-    return (
-      <div className="container max-w-md mx-auto mt-16 px-4">
-        <Alert className="mb-4 bg-green-50 border-green-200">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertTitle className="text-green-800">Thank You!</AlertTitle>
-          <AlertDescription className="text-green-700">
-            Your feedback has been submitted successfully. Redirecting you to the homepage in a few seconds...
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate("/")} className="w-full">
-          Go to Homepage Now
-        </Button>
-      </div>
-    );
-  }
-  
-  // Feedback form
-  return (
-    <div className="container max-w-md mx-auto mt-8 px-4 mb-12">
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Feedback</CardTitle>
-          <CardDescription>
-            Please provide your feedback for project: {tokenData?.projectTitle}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="rating"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>How would you rate your experience?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex space-x-1"
-                      >
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <FormItem key={rating} className="flex flex-col items-center space-y-1">
-                            <FormControl>
-                              <RadioGroupItem
-                                value={rating.toString()}
-                                className="peer sr-only"
-                                id={`rating-${rating}`}
-                              />
-                            </FormControl>
-                            <FormLabel
-                              htmlFor={`rating-${rating}`}
-                              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                            >
-                              <Star
-                                className={`h-4 w-4 ${
-                                  field.value === rating.toString()
-                                    ? "fill-primary text-primary"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                              <span className="text-xs mt-1">{rating}</span>
-                            </FormLabel>
-                          </FormItem>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                    <FormDescription>
-                      Rating is optional but appreciated
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Feedback</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Please share your thoughts, suggestions, or experiences with the project..."
-                        className="min-h-[150px] resize-y"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitFeedback.isPending}
-              >
-                {submitFeedback.isPending ? (
-                  <>
-                    <LoadingSpinner className="mr-2 h-4 w-4" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Feedback"
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      
+      {/* Direct feedback form */}
+      {directFeedbackVisible && (
+        <div className="mt-8">
+          <EmotionSlider 
+            onSubmit={handleFeedbackSubmit}
+            onCancel={() => setDirectFeedbackVisible(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }

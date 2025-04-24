@@ -490,6 +490,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Emotion Feedback API
+  app.post("/api/feedback/emotion", async (req, res) => {
+    try {
+      // If user is authenticated, associate feedback with user
+      let userData: { userId?: number } = {};
+      if (req.isAuthenticated()) {
+        userData = { userId: req.user.id };
+      }
+      
+      // Validate the feedback data
+      const validatedData = insertEmotionFeedbackSchema.parse({
+        ...req.body,
+        ...userData
+      });
+      
+      // Insert the emotion feedback into database
+      const result = await db.insert(emotionFeedback).values({
+        ...validatedData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      
+      // If feedback is related to a project, create an activity record
+      if (validatedData.projectId) {
+        try {
+          await storage.createActivity({
+            projectId: validatedData.projectId,
+            type: "feedback",
+            content: `Emotion feedback submitted with satisfaction rating: ${validatedData.satisfaction}%`,
+          });
+          
+          // If there's an admin for the project, create a notification
+          const project = await storage.getProject(validatedData.projectId);
+          if (project) {
+            // Create notification for admin
+            await storage.createNotification({
+              userId: 1, // Assuming admin user has ID 1, should be refined later
+              type: "new_feedback",
+              title: "New Emotion Feedback",
+              message: `New emotion feedback was submitted for project "${project.title}"`,
+              projectId: validatedData.projectId,
+              metadata: { 
+                feedbackType: "emotion",
+                satisfaction: validatedData.satisfaction
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error creating activity or notification for emotion feedback:", error);
+          // Don't fail the request if just the activity or notification creation fails
+        }
+      }
+      
+      return res.status(201).json({ 
+        success: true, 
+        message: "Feedback submitted successfully",
+        feedback: result[0]
+      });
+    } catch (error) {
+      console.error("Error submitting emotion feedback:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid feedback data", errors: error.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Project Review Routes
   app.post("/api/projects/:id/review", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

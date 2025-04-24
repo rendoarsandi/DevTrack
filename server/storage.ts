@@ -1,7 +1,7 @@
 import { 
   users, projects, feedback, activities, milestones, 
   notifications, invoices, payments, chatMessages, feedbackTokens,
-  dashboardWidgets, userWidgets
+  dashboardWidgets, userWidgets, emotionFeedback
 } from "@shared/schema";
 import type { 
   User, InsertUser, 
@@ -15,7 +15,8 @@ import type {
   Payment, InsertPayment,
   ChatMessage, InsertChatMessage,
   DashboardWidget, InsertDashboardWidget,
-  UserWidget, InsertUserWidget, UpdateUserWidget
+  UserWidget, InsertUserWidget, UpdateUserWidget,
+  InsertEmotionFeedback
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
@@ -35,6 +36,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAdminUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserEmailVerification(userId: number, isVerified: boolean): Promise<User | undefined>;
   
@@ -153,6 +155,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user || undefined;
+  }
+  
+  async getAdminUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.role, "admin"));
   }
 
   // Project methods
