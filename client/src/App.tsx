@@ -55,6 +55,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/feedback" component={RequirePublicFeedback} />
       <Route path="/feedback/:token" component={RequirePublicFeedback} />
       
       {/* Protected client routes */}

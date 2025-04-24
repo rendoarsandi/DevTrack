@@ -191,6 +191,13 @@ export default function LandingPage() {
                 >
                   Contact
                 </a>
+                <Link
+                  href="/feedback"
+                  className="py-2 px-4 hover:bg-muted/50 rounded-md transition"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Feedback
+                </Link>
                 
                 {/* Mobile User Menu */}
                 {user ? (
