@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 import { sendVerificationEmail, verifyCode, resendVerificationCode } from "./email-verification";
 import { 
   insertProjectSchema, updateProjectSchema, 
-  insertFeedbackSchema, insertMilestoneSchema, 
+  insertFeedbackSchema, insertFeedbackTokenSchema, insertMilestoneSchema, 
   updateMilestoneSchema, insertNotificationSchema,
   updateNotificationSchema, insertInvoiceSchema, updateInvoiceSchema,
   insertPaymentSchema, projects, activities, insertActivitySchema,
@@ -1365,6 +1365,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error processing Xendit webhook:", error);
       // Tetap return 200 untuk webhook (mencegah Xendit retry yang berlebihan)
       return res.status(200).json({ success: false, error: "Error processing webhook" });
+    }
+  });
+  
+  // Feedback Tokens API Endpoints
+  
+  // Generate a new feedback token for a project (admin only)
+  app.post("/api/admin/projects/:id/feedback-tokens", adminAuthMiddleware, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Create a new feedback token
+      const token = await storage.createFeedbackToken({ projectId });
+      
+      return res.status(201).json(token);
+    } catch (error) {
+      console.error("Error creating feedback token:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all feedback tokens for a project (admin only)
+  app.get("/api/admin/projects/:id/feedback-tokens", adminAuthMiddleware, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const tokens = await storage.getFeedbackTokensByProject(projectId);
+      return res.json(tokens);
+    } catch (error) {
+      console.error("Error fetching feedback tokens:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Public feedback submission endpoint (no authentication required)
+  app.post("/api/public/feedback/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { content, rating } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: "Feedback content is required" });
+      }
+      
+      // Get the token and check if it's valid
+      const feedbackToken = await storage.getFeedbackToken(token);
+      if (!feedbackToken) {
+        return res.status(404).json({ message: "Invalid feedback token" });
+      }
+      
+      // Check if token is expired
+      if (feedbackToken.expiresAt && new Date(feedbackToken.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Feedback token has expired" });
+      }
+      
+      // Check if token is already used
+      if (feedbackToken.isUsed) {
+        return res.status(400).json({ message: "Feedback token has already been used" });
+      }
+      
+      // Create the feedback
+      const newFeedback = await storage.createFeedback({
+        projectId: feedbackToken.projectId,
+        content,
+        rating: rating ? parseInt(rating) : undefined
+      });
+      
+      // Mark the token as used
+      await storage.markFeedbackTokenAsUsed(token);
+      
+      // Get the project to create notification
+      const project = await storage.getProject(feedbackToken.projectId);
+      
+      // Notify admin about new feedback
+      if (project) {
+        // Find all admin users (would need a getAdmins method, future enhancement)
+        // For now, let's just create a notification for the client
+        await storage.createNotification({
+          userId: project.clientId,
+          type: "new_feedback",
+          title: "New Feedback Received",
+          message: `New feedback received for project "${project.title}"`,
+          projectId: project.id,
+          metadata: { feedbackId: newFeedback.id }
+        });
+      }
+      
+      return res.status(201).json({
+        message: "Feedback submitted successfully",
+        feedback: newFeedback
+      });
+    } catch (error) {
+      console.error("Error submitting public feedback:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get feedback token info (public, for validating token before showing form)
+  app.get("/api/public/feedback/:token/validate", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const feedbackToken = await storage.getFeedbackToken(token);
+      
+      if (!feedbackToken) {
+        return res.status(404).json({
+          valid: false,
+          message: "Invalid feedback token"
+        });
+      }
+      
+      // Check if token is expired
+      if (feedbackToken.expiresAt && new Date(feedbackToken.expiresAt) < new Date()) {
+        return res.status(200).json({
+          valid: false,
+          message: "Feedback token has expired"
+        });
+      }
+      
+      // Check if token is already used
+      if (feedbackToken.isUsed) {
+        return res.status(200).json({
+          valid: false,
+          message: "Feedback token has already been used"
+        });
+      }
+      
+      // Get project information
+      const project = await storage.getProject(feedbackToken.projectId);
+      
+      return res.status(200).json({
+        valid: true,
+        projectId: feedbackToken.projectId,
+        projectTitle: project?.title || "Unknown Project",
+        expiresAt: feedbackToken.expiresAt
+      });
+    } catch (error) {
+      console.error("Error validating feedback token:", error);
+      return res.status(500).json({ 
+        valid: false,
+        message: "Internal server error" 
+      });
     }
   });
   

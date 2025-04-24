@@ -42,6 +42,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/feedback/:token" component={() => import("@/pages/public-feedback").then(module => <module.default />)} />
       
       {/* Protected client routes */}
       <ProtectedRoute path="/dashboard" component={Dashboard} />
