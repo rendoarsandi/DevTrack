@@ -657,9 +657,9 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Update Xendit related fields
-    if (updateData.xenditInvoiceId !== undefined) updateValues.xenditInvoiceId = updateData.xenditInvoiceId;
-    if (updateData.xenditInvoiceUrl !== undefined) updateValues.xenditInvoiceUrl = updateData.xenditInvoiceUrl;
+    // Update PayPal related fields
+    if (updateData.paypalOrderId !== undefined) updateValues.paypalOrderId = updateData.paypalOrderId;
+    if (updateData.paypalOrderStatus !== undefined) updateValues.paypalOrderStatus = updateData.paypalOrderStatus;
     
     // Add updatedAt timestamp
     updateValues.updatedAt = new Date();

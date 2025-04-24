@@ -160,8 +160,8 @@ export const invoices = pgTable("invoices", {
   paidAmount: integer("paid_amount").default(0),
   notes: text("notes"), // Catatan tambahan dari admin
   termsAndConditions: text("terms_and_conditions"), // Syarat dan ketentuan tambahan
-  xenditInvoiceId: text("xendit_invoice_id"), // ID invoice dari Xendit
-  xenditInvoiceUrl: text("xendit_invoice_url"), // URL invoice dari Xendit
+  paypalOrderId: text("paypal_order_id"), // ID order dari PayPal
+  paypalOrderStatus: text("paypal_order_status"), // Status order dari PayPal
   metadata: jsonb("metadata"), // Data tambahan seperti info pajak, diskon, dll
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
@@ -174,7 +174,7 @@ export const payments = pgTable("payments", {
   projectId: integer("project_id").notNull().references(() => projects.id),
   clientId: integer("client_id").notNull().references(() => users.id),
   amount: integer("amount").notNull(),
-  method: text("method").notNull(), // bank_transfer, virtual_account, credit_card, ewallet
+  method: text("method").notNull(), // bank_transfer, virtual_account, credit_card, paypal, ewallet
   status: text("status").notNull(), // pending, success, failed, cancelled
   paymentDate: timestamp("payment_date").notNull().defaultNow(),
   transactionId: text("transaction_id"), // ID transaksi dari payment gateway
@@ -319,8 +319,8 @@ export const updateInvoiceSchema = z.object({
   termsAndConditions: z.string().optional(),
   paidDate: z.date().optional(),
   paidAmount: z.number().optional(),
-  xenditInvoiceId: z.string().optional(),
-  xenditInvoiceUrl: z.string().optional(),
+  paypalOrderId: z.string().optional(),
+  paypalOrderStatus: z.string().optional(),
   metadata: z.record(z.any()).optional(),
 });
 
