@@ -63,23 +63,33 @@ export function EmotionSlider({ projectId, onSubmit, onCancel, className }: Emot
     try {
       const finalFeedback = { ...feedback, comment };
       
-      await apiRequest('/api/feedback/emotion', {
+      const response = await apiRequest('/api/feedback/emotion', {
         method: 'POST',
         body: JSON.stringify(finalFeedback),
       });
+      
+      console.log('Feedback submission response:', response);
       
       toast({
         title: 'Feedback submitted',
         description: 'Thank you for sharing your thoughts!',
         variant: 'default',
+        className: "bg-green-50 border-green-200 text-green-800",
       });
       
+      // Reset form or provide success state
       if (onSubmit) onSubmit(finalFeedback);
     } catch (error) {
       console.error('Error submitting feedback:', error);
+      
+      let errorMessage = 'There was an error submitting your feedback. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Submission failed',
-        description: 'There was an error submitting your feedback. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
