@@ -113,12 +113,10 @@ export default function AdminProjectDetail() {
         updatedData.progress = 0;
       }
       
-      const response = await apiRequest(
-        "PATCH", 
-        `/api/admin/projects/${projectId}`, 
-        updatedData
-      );
-      return response.json();
+      return await apiRequest(`/api/admin/projects/${projectId}`, {
+        method: "PATCH",
+        body: JSON.stringify(updatedData)
+      });
     },
     onSuccess: (data) => {
       toast({
@@ -148,9 +146,12 @@ export default function AdminProjectDetail() {
       
       // Jika ada perubahan status, catat sebagai activity
       if (activityContent) {
-        apiRequest("POST", `/api/projects/${projectId}/activities`, {
-          type: "status_change",
-          content: activityContent
+        apiRequest(`/api/projects/${projectId}/activities`, {
+          method: "POST",
+          body: JSON.stringify({
+            type: "status_change",
+            content: activityContent
+          })
         });
       }
       
@@ -630,9 +631,12 @@ export default function AdminProjectDetail() {
                     if (typeof window !== 'undefined') {
                       const commitMessage = window.prompt("Enter GitHub commit message:");
                       if (commitMessage) {
-                        apiRequest("POST", `/api/projects/${projectId}/activities`, {
-                          type: "commit",
-                          content: commitMessage
+                        apiRequest(`/api/projects/${projectId}/activities`, {
+                          method: "POST",
+                          body: JSON.stringify({
+                            type: "commit",
+                            content: commitMessage
+                          })
                         })
                         .then(() => {
                           queryClient.invalidateQueries({
@@ -722,11 +726,14 @@ export default function AdminProjectDetail() {
                         dueDate.setDate(dueDate.getDate() + 7); // Default due in 1 week
                         
                         // Create a new milestone
-                        apiRequest("POST", `/api/projects/${projectId}/milestones`, {
-                          title,
-                          description: description || "",
-                          dueDate: dueDate.toISOString(),
-                          completed: false
+                        apiRequest(`/api/projects/${projectId}/milestones`, {
+                          method: "POST",
+                          body: JSON.stringify({
+                            title,
+                            description: description || "",
+                            dueDate: dueDate.toISOString(),
+                            completed: false
+                          })
                         })
                         .then(() => {
                           queryClient.invalidateQueries({
@@ -775,8 +782,11 @@ export default function AdminProjectDetail() {
                               onClick={() => {
                                 // Toggle milestone completion status
                                 const newStatus = !milestone.completed;
-                                apiRequest("PATCH", `/api/projects/${projectId}/milestones/${milestone.id}`, {
-                                  completed: newStatus
+                                apiRequest(`/api/projects/${projectId}/milestones/${milestone.id}`, {
+                                  method: "PATCH",
+                                  body: JSON.stringify({
+                                    completed: newStatus
+                                  })
                                 })
                                 .then(() => {
                                   queryClient.invalidateQueries({
@@ -789,8 +799,11 @@ export default function AdminProjectDetail() {
                                   ).length;
                                   const progress = Math.round((completedCount / milestones.length) * 100);
                                   
-                                  apiRequest("PATCH", `/api/admin/projects/${projectId}`, {
-                                    progress: progress
+                                  apiRequest(`/api/admin/projects/${projectId}`, {
+                                    method: "PATCH",
+                                    body: JSON.stringify({
+                                      progress: progress
+                                    })
                                   })
                                   .then(() => {
                                     queryClient.invalidateQueries({
@@ -822,7 +835,9 @@ export default function AdminProjectDetail() {
                               size="sm"
                               onClick={() => {
                                 if (typeof window !== 'undefined' && confirm("Are you sure you want to delete this milestone?")) {
-                                  apiRequest("DELETE", `/api/projects/${projectId}/milestones/${milestone.id}`)
+                                  apiRequest(`/api/projects/${projectId}/milestones/${milestone.id}`, {
+                                    method: "DELETE"
+                                  })
                                   .then(() => {
                                     queryClient.invalidateQueries({
                                       queryKey: [`/api/projects/${projectId}/milestones`],
@@ -928,6 +943,24 @@ export default function AdminProjectDetail() {
             </Card>
           </TabsContent>
 
+          {/* Feedback Collection Tab */}
+          <TabsContent value="feedbackTokens" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2 text-blue-600" />
+                  <span>Feedback Collection Links</span>
+                </CardTitle>
+                <CardDescription>
+                  Create and manage links to collect client feedback for this project
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FeedbackTokenTable projectId={parseInt(projectId)} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           {/* Live Chat Tab - Available for all projects */}
           <TabsContent value="livechat" className="space-y-4">
             <Card>
@@ -995,8 +1028,11 @@ export default function AdminProjectDetail() {
                     }
                     
                     // Submit handover feedback
-                    apiRequest("POST", `/api/projects/${projectId}/feedback`, {
-                      content: `PROJECT HANDOVER: ${handoverMessage}`,
+                    apiRequest(`/api/projects/${projectId}/feedback`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        content: `PROJECT HANDOVER: ${handoverMessage}`
+                      })
                     }).then(() => {
                       // Update project status to completed
                       updateProjectMutation.mutate({
