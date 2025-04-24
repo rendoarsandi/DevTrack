@@ -29,10 +29,23 @@ export default function PublicFeedback() {
   // Extract token from URL
   const token = window.location.pathname.split("/").pop() || "";
   
+  interface TokenValidationResponse {
+    valid: boolean;
+    message?: string;
+    projectId?: number;
+    projectTitle?: string;
+    expiresAt?: string;
+  }
+  
+  interface FeedbackResponse {
+    message: string;
+    feedback: any;
+  }
+  
   // Validate token
   const { data: tokenData, isLoading: isValidating, error: tokenError } = useQuery({
     queryKey: [`/api/public/feedback/${token}/validate`],
-    queryFn: () => apiRequest(`/api/public/feedback/${token}/validate`),
+    queryFn: () => apiRequest<TokenValidationResponse>(`/api/public/feedback/${token}/validate`),
     retry: false,
   });
   
@@ -46,7 +59,7 @@ export default function PublicFeedback() {
   
   const submitFeedback = useMutation({
     mutationFn: (values: FeedbackFormValues) => {
-      return apiRequest(`/api/public/feedback/${token}`, {
+      return apiRequest<FeedbackResponse>(`/api/public/feedback/${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

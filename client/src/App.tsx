@@ -1,3 +1,4 @@
+import React, { Suspense, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -26,14 +27,26 @@ import AdminAnalytics from "@/pages/admin/admin-analytics";
 import AdminSettings from "@/pages/admin/admin-settings";
 import { SuccessNotification } from "@/components/notification/SuccessNotification";
 import { VerificationStatusToast } from "@/components/auth/VerificationStatusToast";
-import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import LandingPage from "@/pages/landing-page";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Correct implementation for project detail route
 const SafeProjectDetail = () => {
   // No need to call ProjectDetail as a function, it's already a React component
   return <ProjectDetail />;
+};
+
+// Lazy-loaded public feedback page
+const PublicFeedback = React.lazy(() => import("@/pages/public-feedback"));
+
+// Wrapper for public feedback page with loading indicator
+const RequirePublicFeedback = () => {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><LoadingSpinner size="lg" /></div>}>
+      <PublicFeedback />
+    </Suspense>
+  );
 };
 
 function Router() {
@@ -42,7 +55,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/feedback/:token" component={() => import("@/pages/public-feedback").then(module => <module.default />)} />
+      <Route path="/feedback/:token" component={RequirePublicFeedback} />
       
       {/* Protected client routes */}
       <ProtectedRoute path="/dashboard" component={Dashboard} />
