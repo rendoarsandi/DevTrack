@@ -1,6 +1,7 @@
 import { 
   users, projects, feedback, activities, milestones, 
-  notifications, invoices, payments, chatMessages, feedbackTokens
+  notifications, invoices, payments, chatMessages, feedbackTokens,
+  dashboardWidgets, userWidgets
 } from "@shared/schema";
 import type { 
   User, InsertUser, 
@@ -12,7 +13,9 @@ import type {
   Notification, InsertNotification, UpdateNotification,
   Invoice, InsertInvoice, UpdateInvoice,
   Payment, InsertPayment,
-  ChatMessage, InsertChatMessage
+  ChatMessage, InsertChatMessage,
+  DashboardWidget, InsertDashboardWidget,
+  UserWidget, InsertUserWidget, UpdateUserWidget
 } from "@shared/schema";
 import session from "express-session";
 import { db } from "./db";
@@ -91,6 +94,19 @@ export interface IStorage {
   // Chat methods
   getChatMessagesByProject(projectId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
+  // Dashboard Widget methods
+  getDashboardWidgets(): Promise<DashboardWidget[]>;
+  getDashboardWidgetsByRole(role: string): Promise<DashboardWidget[]>;
+  getDashboardWidget(id: number): Promise<DashboardWidget | undefined>;
+  createDashboardWidget(widget: InsertDashboardWidget): Promise<DashboardWidget>;
+  
+  // User Widget methods
+  getUserWidgets(userId: number): Promise<UserWidget[]>;
+  getUserWidget(id: number): Promise<UserWidget | undefined>;
+  createUserWidget(widget: InsertUserWidget): Promise<UserWidget>;
+  updateUserWidget(widget: UpdateUserWidget): Promise<UserWidget | undefined>;
+  deleteUserWidget(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: any;
@@ -796,6 +812,86 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return chatMessage;
+  }
+  
+  // Dashboard Widget methods
+  async getDashboardWidgets(): Promise<DashboardWidget[]> {
+    return await db.select().from(dashboardWidgets);
+  }
+  
+  async getDashboardWidgetsByRole(role: string): Promise<DashboardWidget[]> {
+    return await db
+      .select()
+      .from(dashboardWidgets)
+      .where(
+        sql`${dashboardWidgets.availableToRoles} && ARRAY[${role}]::text[]`
+      );
+  }
+  
+  async getDashboardWidget(id: number): Promise<DashboardWidget | undefined> {
+    const [widget] = await db
+      .select()
+      .from(dashboardWidgets)
+      .where(eq(dashboardWidgets.id, id));
+    
+    return widget || undefined;
+  }
+  
+  async createDashboardWidget(widget: InsertDashboardWidget): Promise<DashboardWidget> {
+    const [newWidget] = await db
+      .insert(dashboardWidgets)
+      .values(widget)
+      .returning();
+    
+    return newWidget;
+  }
+  
+  // User Widget methods
+  async getUserWidgets(userId: number): Promise<UserWidget[]> {
+    return await db
+      .select()
+      .from(userWidgets)
+      .where(eq(userWidgets.userId, userId))
+      .orderBy(userWidgets.position);
+  }
+  
+  async getUserWidget(id: number): Promise<UserWidget | undefined> {
+    const [widget] = await db
+      .select()
+      .from(userWidgets)
+      .where(eq(userWidgets.id, id));
+    
+    return widget || undefined;
+  }
+  
+  async createUserWidget(widget: InsertUserWidget): Promise<UserWidget> {
+    const [newWidget] = await db
+      .insert(userWidgets)
+      .values(widget)
+      .returning();
+    
+    return newWidget;
+  }
+  
+  async updateUserWidget(widget: UpdateUserWidget): Promise<UserWidget | undefined> {
+    const [updatedWidget] = await db
+      .update(userWidgets)
+      .set({
+        ...widget,
+        updatedAt: new Date()
+      })
+      .where(eq(userWidgets.id, widget.id))
+      .returning();
+    
+    return updatedWidget || undefined;
+  }
+  
+  async deleteUserWidget(id: number): Promise<boolean> {
+    const result = await db
+      .delete(userWidgets)
+      .where(eq(userWidgets.id, id));
+    
+    return result.count > 0;
   }
 }
 

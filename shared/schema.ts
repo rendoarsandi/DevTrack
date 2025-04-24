@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -369,6 +369,96 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
 });
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+// Enum untuk tipe widget dashboard
+export const widgetTypeEnum = pgEnum("widget_type", [
+  "project_status",    // Status proyek terkini
+  "project_progress",  // Progres proyek dalam persentase
+  "recent_activities", // Aktivitas terbaru
+  "upcoming_milestones", // Milestone yang akan datang
+  "invoice_summary",   // Ringkasan invoice
+  "payment_summary",   // Ringkasan pembayaran
+  "message_count",     // Jumlah pesan
+  "task_list",         // Daftar tugas
+  "calendar",          // Kalender untuk deadline
+  "quick_links",       // Tautan cepat
+  "chart",             // Grafik/chart berbagai jenis
+  "custom"             // Widget kustom
+]);
+
+// Tabel untuk mendefinisikan semua widget yang tersedia
+export const dashboardWidgets = pgTable("dashboard_widgets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  type: widgetTypeEnum("type").notNull(),
+  icon: text("icon").notNull(), // Icon dari Lucide-react
+  defaultWidth: integer("default_width").notNull().default(1), // 1-12 columns (12 column grid)
+  defaultHeight: integer("default_height").notNull().default(1), // dalam satuan unit
+  defaultConfig: jsonb("default_config"), // Konfigurasi default untuk widget
+  availableToRoles: text("available_to_roles").array().notNull().default(['client', 'admin']), // Role yang dapat menggunakan widget
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Tabel untuk menyimpan konfigurasi widget user
+export const userWidgets = pgTable("user_widgets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  widgetId: integer("widget_id").notNull().references(() => dashboardWidgets.id),
+  position: integer("position").notNull(), // Urutan widget
+  gridX: integer("grid_x").notNull().default(0), // Posisi X pada grid dashboard
+  gridY: integer("grid_y").notNull().default(0), // Posisi Y pada grid dashboard
+  width: integer("width").notNull().default(1), // Lebar dalam unit grid (1-12)
+  height: integer("height").notNull().default(1), // Tinggi dalam unit grid
+  config: jsonb("config"), // Konfigurasi spesifik untuk widget ini
+  isVisible: boolean("is_visible").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Schema untuk insert dashboard widget
+export const insertDashboardWidgetSchema = createInsertSchema(dashboardWidgets).pick({
+  name: true,
+  description: true,
+  type: true,
+  icon: true,
+  defaultWidth: true,
+  defaultHeight: true,
+  defaultConfig: true,
+  availableToRoles: true,
+});
+
+// Schema untuk insert user widget
+export const insertUserWidgetSchema = createInsertSchema(userWidgets).pick({
+  userId: true,
+  widgetId: true,
+  position: true,
+  gridX: true,
+  gridY: true,
+  width: true,
+  height: true,
+  config: true,
+  isVisible: true,
+});
+
+// Schema untuk update user widget
+export const updateUserWidgetSchema = z.object({
+  id: z.number(),
+  position: z.number().optional(),
+  gridX: z.number().optional(),
+  gridY: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  config: z.any().optional(),
+  isVisible: z.boolean().optional(),
+});
+
+export type InsertDashboardWidget = z.infer<typeof insertDashboardWidgetSchema>;
+export type InsertUserWidget = z.infer<typeof insertUserWidgetSchema>;
+export type UpdateUserWidget = z.infer<typeof updateUserWidgetSchema>;
+export type DashboardWidget = typeof dashboardWidgets.$inferSelect;
+export type UserWidget = typeof userWidgets.$inferSelect;
 
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
