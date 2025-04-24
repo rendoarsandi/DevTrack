@@ -370,6 +370,41 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
+// Emotion Feedback model untuk feedback dengan sliders emosi
+export const emotionFeedback = pgTable("emotion_feedback", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id), // Optional reference to a project
+  userId: integer("user_id").references(() => users.id), // Who submitted the feedback
+  satisfaction: integer("satisfaction").notNull(), // Overall satisfaction (0-100)
+  usability: integer("usability").notNull(), // Ease of use (0-100)
+  design: integer("design").notNull(), // Visual design appeal (0-100)
+  performance: integer("performance").notNull(), // Speed and performance (0-100)
+  comment: text("comment"), // Optional text feedback
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Emotion Feedback schema untuk validasi
+export const insertEmotionFeedbackSchema = createInsertSchema(emotionFeedback).pick({
+  projectId: true,
+  userId: true,
+  satisfaction: true,
+  usability: true,
+  design: true,
+  performance: true,
+  comment: true,
+}).extend({
+  projectId: z.number().optional(),
+  userId: z.number().optional(),
+  satisfaction: z.number().min(0).max(100),
+  usability: z.number().min(0).max(100),
+  design: z.number().min(0).max(100),
+  performance: z.number().min(0).max(100),
+  comment: z.string().optional(),
+});
+
+export type InsertEmotionFeedback = z.infer<typeof insertEmotionFeedbackSchema>;
+
 // Enum untuk tipe widget dashboard
 export const widgetTypeEnum = pgEnum("widget_type", [
   "project_status",    // Status proyek terkini
