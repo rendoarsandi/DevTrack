@@ -61,9 +61,6 @@ export default function PublicFeedback() {
     mutationFn: (values: FeedbackFormValues) => {
       return apiRequest<FeedbackResponse>(`/api/public/feedback/${token}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           content: values.content,
           rating: values.rating,

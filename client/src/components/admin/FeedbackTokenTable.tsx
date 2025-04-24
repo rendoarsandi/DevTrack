@@ -42,10 +42,7 @@ export default function FeedbackTokenTable({ projectId }: FeedbackTokenTableProp
 
   const createTokenMutation = useMutation({
     mutationFn: () => apiRequest<FeedbackToken>(`/api/admin/projects/${projectId}/feedback-tokens`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      method: 'POST'
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/projects', projectId, 'feedback-tokens'] });

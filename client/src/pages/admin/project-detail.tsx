@@ -35,6 +35,7 @@ import {
   MessagesSquare
 } from "lucide-react";
 import { ProjectReviewForm } from "@/components/admin/ProjectReviewForm";
+import FeedbackTokenTable from "@/components/admin/FeedbackTokenTable";
 import { LiveChat } from "@/components/project/LiveChat";
 import { Project, Feedback, Milestone } from "@shared/schema";
 
@@ -596,6 +597,10 @@ export default function AdminProjectDetail() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
             <TabsTrigger value="feedback">Messages</TabsTrigger>
+            <TabsTrigger value="feedbackTokens" className="flex items-center">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Feedback Collection
+            </TabsTrigger>
             <TabsTrigger value="livechat" className="flex items-center">
               <MessagesSquare className="mr-2 h-4 w-4" />
               Live Chat
