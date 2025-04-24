@@ -599,8 +599,8 @@ export class DatabaseStorage implements IStorage {
     if (!invoice) return undefined;
     
     const updateValues: Partial<Invoice> = {};
-    // Gunakan string dari notificationTypeEnum
-    let notificationType = "payment_update";
+    // Gunakan nilai dari notificationTypeEnum
+    let notificationType: "status_update" | "new_message" | "new_feedback" | "new_milestone" | "milestone_update" | "payment_update" | "invoice_created" | "payment_received" | "admin_action" = "payment_update";
     let notificationTitle = "Invoice Updated";
     let notificationMessage = `Your invoice (${invoice.invoiceNumber}) has been updated.`;
     

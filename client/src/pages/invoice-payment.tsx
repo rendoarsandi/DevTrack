@@ -30,8 +30,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, AlertTriangle, CreditCard, Upload } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, CreditCard, Upload, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PayPalCheckout from "@/components/invoice/PayPalCheckout";
 
 // Schema for payment form validation
 const paymentFormSchema = z.object({
@@ -197,137 +199,187 @@ export default function InvoicePaymentPage() {
             <CardHeader>
               <CardTitle>Make a Payment</CardTitle>
               <CardDescription>
-                Fill out the form to record a payment for invoice #{invoice.invoiceNumber}
+                Choose your payment method for invoice #{invoice.invoiceNumber}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Amount */}
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Amount</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                              Rp
-                            </span>
-                            <Input 
-                              type="text"
-                              placeholder="0.00" 
-                              className="pl-10" 
-                              {...field} 
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Amount due: {formatCurrency(amountDue)}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Payment Method */}
-                  <FormField
-                    control={form.control}
-                    name="method"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payment method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="virtual_account">Virtual Account</SelectItem>
-                            <SelectItem value="credit_card">Credit Card</SelectItem>
-                            <SelectItem value="ewallet">E-Wallet (OVO, GoPay, etc.)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Choose how you made the payment
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Payment Proof */}
-                  <FormItem>
-                    <FormLabel>Payment Proof</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById("payment-proof")?.click()}
-                          className="w-full"
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          {selectedFile ? selectedFile.name : "Upload payment proof"}
-                        </Button>
-                        <input
-                          id="payment-proof"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
+              <Tabs defaultValue="manual" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manual">Manual Transfer</TabsTrigger>
+                  <TabsTrigger value="paypal">PayPal</TabsTrigger>
+                </TabsList>
+                
+                {/* Manual Payment Tab */}
+                <TabsContent value="manual">
+                  <div className="mt-4 space-y-4">
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Amount */}
+                        <FormField
+                          control={form.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payment Amount</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                                    Rp
+                                  </span>
+                                  <Input 
+                                    type="text"
+                                    placeholder="0.00" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormDescription>
+                                Amount due: {formatCurrency(amountDue)}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
+                        
+                        {/* Payment Method */}
+                        <FormField
+                          control={form.control}
+                          name="method"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Payment Method</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select payment method" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                  <SelectItem value="virtual_account">Virtual Account</SelectItem>
+                                  <SelectItem value="credit_card">Credit Card</SelectItem>
+                                  <SelectItem value="ewallet">E-Wallet (OVO, GoPay, etc.)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                Choose how you made the payment
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {/* Payment Proof */}
+                        <FormItem>
+                          <FormLabel>Payment Proof</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById("payment-proof")?.click()}
+                                className="w-full"
+                              >
+                                <Upload className="mr-2 h-4 w-4" />
+                                {selectedFile ? selectedFile.name : "Upload payment proof"}
+                              </Button>
+                              <input
+                                id="payment-proof"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="hidden"
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Upload a screenshot of your payment receipt
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                        
+                        {/* Notes */}
+                        <FormField
+                          control={form.control}
+                          name="notes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Notes</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Additional information about this payment" 
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={createPayment.isPending || isUploading}
+                        >
+                          {createPayment.isPending || isUploading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Submit Payment
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  </div>
+                </TabsContent>
+                
+                {/* PayPal Tab */}
+                <TabsContent value="paypal">
+                  <div className="mt-6 space-y-6">
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-medium">Pay with PayPal</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Secure, instant payment via PayPal
+                      </p>
+                    </div>
+                    
+                    <div className="px-4">
+                      <PayPalCheckout 
+                        invoiceId={invoice.id} 
+                        amount={amountDue}
+                        onSuccess={(details) => {
+                          // Handle success - will navigate to invoice detail page
+                          navigate(`/invoices/${id}`);
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="bg-muted p-4 rounded-md mt-6">
+                      <div className="flex items-start">
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-2" />
+                        <div className="text-sm">
+                          <p className="font-medium">Benefits of PayPal payment:</p>
+                          <ul className="list-disc pl-5 mt-1 space-y-1 text-muted-foreground">
+                            <li>Instant payment confirmation</li>
+                            <li>No need to upload payment proof</li>
+                            <li>Secure transaction with buyer protection</li>
+                            <li>Pay using credit cards, debit cards or PayPal balance</li>
+                          </ul>
+                        </div>
                       </div>
-                    </FormControl>
-                    <FormDescription>
-                      Upload a screenshot of your payment receipt
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                  
-                  {/* Notes */}
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Additional information about this payment" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={createPayment.isPending || isUploading}
-                  >
-                    {createPayment.isPending || isUploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Submit Payment
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
