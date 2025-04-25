@@ -29,6 +29,7 @@ import { SuccessNotification } from "@/components/notification/SuccessNotificati
 import { VerificationStatusToast } from "@/components/auth/VerificationStatusToast";
 import { useToast } from "@/hooks/use-toast";
 import LandingPage from "@/pages/landing-page";
+import LandingPageNew from "@/pages/landing-page-new";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SplashScreen } from "@/components/splash/SplashScreen";
 
@@ -53,7 +54,7 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/" component={LandingPage} />
+      <Route path="/" component={LandingPageNew} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/feedback" component={RequirePublicFeedback} />
       <Route path="/feedback/:token" component={RequirePublicFeedback} />
