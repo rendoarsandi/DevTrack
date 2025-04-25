@@ -45,8 +45,8 @@ export default function LandingPageNew() {
           <div className="flex items-center space-x-4">
             {user ? (
               <Link href="/dashboard">
-                <Button variant="default" className="bg-white text-black hover:bg-white/90">
-                  Dashboard
+                <Button variant="default" className="bg-white hover:bg-white/90 font-semibold">
+                  <span className="text-black">Dashboard</span>
                 </Button>
               </Link>
             ) : (
@@ -55,8 +55,8 @@ export default function LandingPageNew() {
                   <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">Sign in</Button>
                 </Link>
                 <Link href="/auth">
-                  <Button variant="default" className="bg-white text-black hover:bg-white/90">
-                    Get Started
+                  <Button variant="default" className="bg-white hover:bg-white/90 font-semibold">
+                    <span className="text-black">Get Started</span>
                   </Button>
                 </Link>
               </>
@@ -107,8 +107,8 @@ export default function LandingPageNew() {
                     </Button>
                   </Link>
                   <Link href="/auth">
-                    <Button variant="default" className="w-full bg-white text-black hover:bg-white/90">
-                      Get Started
+                    <Button variant="default" className="w-full bg-white hover:bg-white/90 font-semibold">
+                      <span className="text-black">Get Started</span>
                     </Button>
                   </Link>
                 </div>
@@ -140,12 +140,12 @@ export default function LandingPageNew() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth">
-                <Button size="lg" className="bg-white text-black hover:bg-white/90 px-8">
-                  Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="bg-white hover:bg-white/90 px-8 font-semibold">
+                  <span className="text-black">Get Started</span> <ArrowRight className="ml-2 h-4 w-4 text-black" />
                 </Button>
               </Link>
               <a href="#features">
-                <Button size="lg" variant="outline" className="border-white/20 hover:bg-white/10 px-8">
+                <Button size="lg" variant="outline" className="border-white/20 hover:bg-white/10 px-8 text-white">
                   Learn More
                 </Button>
               </a>
@@ -366,13 +366,17 @@ export default function LandingPageNew() {
                 <Link href="/auth">
                   <Button 
                     className={cn(
-                      "w-full", 
+                      "w-full font-semibold", 
                       plan.highlighted 
                         ? "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white" 
-                        : "bg-white text-black hover:bg-white/90"
+                        : "bg-white hover:bg-white/90"
                     )}
                   >
-                    Get Started
+                    {plan.highlighted ? (
+                      "Get Started"
+                    ) : (
+                      <span className="text-black">Get Started</span>
+                    )}
                   </Button>
                 </Link>
               </div>
@@ -400,8 +404,8 @@ export default function LandingPageNew() {
             Join thousands of satisfied customers who are already using FourByte to build amazing digital experiences.
           </p>
           <Link href="/auth">
-            <Button size="lg" className="bg-white text-black hover:bg-white/90 px-8 shadow-lg">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
+            <Button size="lg" className="bg-white hover:bg-white/90 px-8 shadow-lg font-semibold">
+              <span className="text-black">Get Started</span> <ArrowRight className="ml-2 h-4 w-4 text-black" />
             </Button>
           </Link>
         </div>
