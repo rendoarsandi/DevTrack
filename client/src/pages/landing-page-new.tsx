@@ -26,20 +26,20 @@ export default function LandingPageNew() {
   }, []);
 
   return (
-    <div className="bg-black text-white min-h-screen overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-black text-white">
       {/* Navbar */}
       <nav className={cn(
         "fixed top-0 left-0 w-full transition-all duration-300 z-50",
-        isScrolled ? "bg-black/80 backdrop-blur-md py-4" : "bg-transparent py-6"
+        isScrolled ? "bg-black/80 backdrop-blur-md py-4" : "bg-black/30 py-6"
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-xl font-bold mr-8">FourByte</span>
+            <span className="text-xl font-bold mr-8 text-white">FourByte</span>
             <div className="hidden md:flex space-x-8">
-              <a href="#features" className="text-sm text-white/80 hover:text-white">Features</a>
-              <a href="#testimonials" className="text-sm text-white/80 hover:text-white">Testimonials</a>
-              <a href="#pricing" className="text-sm text-white/80 hover:text-white">Pricing</a>
-              <Link href="/feedback" className="text-sm text-white/80 hover:text-white">Feedback</Link>
+              <a href="#features" className="text-sm text-white hover:text-white/80">Features</a>
+              <a href="#testimonials" className="text-sm text-white hover:text-white/80">Testimonials</a>
+              <a href="#pricing" className="text-sm text-white hover:text-white/80">Pricing</a>
+              <Link href="/feedback" className="text-sm text-white hover:text-white/80">Feedback</Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -52,7 +52,7 @@ export default function LandingPageNew() {
             ) : (
               <>
                 <Link href="/auth">
-                  <Button variant="ghost" className="text-white/80 hover:text-white">Sign in</Button>
+                  <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">Sign in</Button>
                 </Link>
                 <Link href="/auth">
                   <Button variant="default" className="bg-white text-black hover:bg-white/90">
@@ -61,7 +61,7 @@ export default function LandingPageNew() {
                 </Link>
               </>
             )}
-            <button className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <button className="md:hidden text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -122,13 +122,17 @@ export default function LandingPageNew() {
       <div className="relative">
         {/* Background gradient effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-500 opacity-20 rounded-full blur-3xl"></div>
-          <div className="absolute top-80 -right-40 w-96 h-96 bg-blue-500 opacity-20 rounded-full blur-3xl"></div>
+          <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-500 opacity-50 rounded-full blur-3xl"></div>
+          <div className="absolute top-40 right-0 w-[500px] h-[500px] bg-indigo-600 opacity-50 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-40 -left-20 w-72 h-72 bg-blue-500 opacity-30 rounded-full blur-3xl"></div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-20 relative">
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/80 z-10"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-20 relative z-20">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-6 text-white">
               Launch your product <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">with confidence</span>
             </h1>
             <p className="text-xl text-white/70 mb-8 max-w-2xl mx-auto">
@@ -218,10 +222,16 @@ export default function LandingPageNew() {
       </div>
       
       {/* Testimonials */}
-      <div id="testimonials" className="py-24 bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div id="testimonials" className="py-24 bg-black relative">
+        {/* Background gradient effects */}
+        <div className="absolute inset-0 overflow-hidden opacity-30">
+          <div className="absolute top-20 -right-40 w-96 h-96 bg-indigo-500 opacity-10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 -left-40 w-96 h-96 bg-purple-500 opacity-10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
               Loved by businesses worldwide
             </h2>
             <p className="text-white/70">
@@ -247,14 +257,14 @@ export default function LandingPageNew() {
                 role: "Product Manager, GrowthLabs"
               }
             ].map((testimonial, i) => (
-              <div key={i} className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <svg width="45" height="36" className="mb-5 text-white/30" viewBox="0 0 45 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div key={i} className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all shadow-xl">
+                <svg width="45" height="36" className="mb-5 text-white/40" viewBox="0 0 45 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M13.4 36C11.2 36 9.33333 35.2 7.8 33.6C6.26667 32 5.5 30.0667 5.5 27.8C5.5 25.8 6.06667 23.8667 7.2 22C8.33333 20.1333 9.86667 18.4667 11.8 17C13.7333 15.5333 15.9333 14.2667 18.4 13.2C20.8667 12.1333 23.4 11.2667 26 10.6L28.9 14.8C25.5667 15.6 22.5333 16.7333 19.8 18.2C17.0667 19.6667 15.1333 21.2667 14 23C14.8 22.7333 15.6 22.6 16.4 22.6C18.5333 22.6 20.3333 23.4 21.8 25C23.2667 26.6 24 28.5333 24 30.8C24 33.0667 23.2 34.9333 21.6 36.4C20 37.8667 17.9333 38.6 15.4 38.6C15.1333 38.6 14.6 38.6 13.8 38.6C13 38.6 12.5333 38.6 12.4 38.6L13.4 36ZM34.6 36C32.4 36 30.5333 35.2 29 33.6C27.4667 32 26.7 30.0667 26.7 27.8C26.7 25.8 27.2667 23.8667 28.4 22C29.5333 20.1333 31.0667 18.4667 33 17C34.9333 15.5333 37.1333 14.2667 39.6 13.2C42.0667 12.1333 44.6 11.2667 47.2 10.6L50.1 14.8C46.7667 15.6 43.7333 16.7333 41 18.2C38.2667 19.6667 36.3333 21.2667 35.2 23C36 22.7333 36.8 22.6 37.6 22.6C39.7333 22.6 41.5333 23.4 43 25C44.4667 26.6 45.2 28.5333 45.2 30.8C45.2 33.0667 44.4 34.9333 42.8 36.4C41.2 37.8667 39.1333 38.6 36.6 38.6C36.3333 38.6 35.8 38.6 35 38.6C34.2 38.6 33.7333 38.6 33.6 38.6L34.6 36Z" fill="currentColor"/>
                 </svg>
-                <p className="text-white/80 mb-6">{testimonial.quote}</p>
+                <p className="text-white mb-6 leading-relaxed">{testimonial.quote}</p>
                 <div>
-                  <div className="font-bold">{testimonial.author}</div>
-                  <div className="text-white/50">{testimonial.role}</div>
+                  <div className="font-bold text-white">{testimonial.author}</div>
+                  <div className="text-white/60">{testimonial.role}</div>
                 </div>
               </div>
             ))}
@@ -263,10 +273,16 @@ export default function LandingPageNew() {
       </div>
       
       {/* Pricing Section */}
-      <div id="pricing" className="py-24 bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div id="pricing" className="py-24 bg-black relative">
+        {/* Background gradient effects */}
+        <div className="absolute inset-0 overflow-hidden opacity-20">
+          <div className="absolute bottom-40 left-0 w-[600px] h-[600px] bg-indigo-500 opacity-10 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-purple-500 opacity-10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
               Simple, transparent pricing
             </h2>
             <p className="text-white/70">
@@ -320,15 +336,20 @@ export default function LandingPageNew() {
               <div 
                 key={i} 
                 className={cn(
-                  "rounded-2xl p-8 border",
+                  "rounded-2xl p-8 border shadow-xl backdrop-blur-sm transition-all duration-300 hover:translate-y-[-5px]",
                   plan.highlighted 
-                    ? "border-indigo-500 bg-gradient-to-br from-indigo-500/20 to-purple-500/20" 
+                    ? "border-indigo-500 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 relative" 
                     : "border-white/10 bg-white/5"
                 )}
               >
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                {plan.highlighted && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold uppercase py-1 px-3 rounded-full">
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="text-xl font-bold mb-2 text-white">{plan.name}</h3>
                 <div className="flex items-baseline">
-                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-4xl font-bold text-white">{plan.price}</span>
                   <span className="text-white/50 ml-2">/month</span>
                 </div>
                 <p className="text-white/70 mt-2 mb-6">{plan.description}</p>
@@ -361,16 +382,25 @@ export default function LandingPageNew() {
       </div>
       
       {/* CTA Section */}
-      <div className="py-20 bg-gradient-to-r from-indigo-500 to-purple-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+      <div className="relative py-20 overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+        
+        {/* Background effects */}
+        <div className="absolute inset-0">
+          <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-400 opacity-20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-purple-400 opacity-20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
             Ready to get started?
           </h2>
           <p className="text-white/90 max-w-2xl mx-auto mb-8">
             Join thousands of satisfied customers who are already using FourByte to build amazing digital experiences.
           </p>
           <Link href="/auth">
-            <Button size="lg" className="bg-white text-black hover:bg-white/90 px-8">
+            <Button size="lg" className="bg-white text-black hover:bg-white/90 px-8 shadow-lg">
               Get Started <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -378,12 +408,18 @@ export default function LandingPageNew() {
       </div>
       
       {/* Footer */}
-      <footer className="bg-black border-t border-white/10 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+      <footer className="bg-gradient-to-t from-black to-black/90 border-t border-white/10 pt-20 pb-12 relative overflow-hidden">
+        {/* Background elements */}
+        <div className="absolute inset-0 overflow-hidden opacity-10">
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-16">
             <div className="col-span-2">
-              <span className="text-xl font-bold block mb-4">FourByte</span>
-              <p className="text-white/60 mb-4">
+              <span className="text-2xl font-bold block mb-4 text-white">FourByte</span>
+              <p className="text-white/60 mb-6 text-lg">
                 Building the future of digital experiences, one pixel at a time.
               </p>
               <div className="flex space-x-4">
@@ -391,7 +427,7 @@ export default function LandingPageNew() {
                   <a 
                     key={social} 
                     href="#" 
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition"
+                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all duration-200 transform hover:scale-110"
                   >
                     {social[0]}
                   </a>
@@ -400,11 +436,11 @@ export default function LandingPageNew() {
             </div>
             
             <div>
-              <h3 className="font-bold mb-4">Product</h3>
+              <h3 className="font-bold mb-4 text-white">Product</h3>
               <ul className="space-y-3">
                 {['Features', 'Pricing', 'Docs', 'Changelog'].map((item) => (
                   <li key={item}>
-                    <a href="#" className="text-white/60 hover:text-white transition">
+                    <a href="#" className="text-white/60 hover:text-white transition-colors duration-200">
                       {item}
                     </a>
                   </li>
@@ -413,11 +449,11 @@ export default function LandingPageNew() {
             </div>
             
             <div>
-              <h3 className="font-bold mb-4">Company</h3>
+              <h3 className="font-bold mb-4 text-white">Company</h3>
               <ul className="space-y-3">
                 {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
                   <li key={item}>
-                    <a href="#" className="text-white/60 hover:text-white transition">
+                    <a href="#" className="text-white/60 hover:text-white transition-colors duration-200">
                       {item}
                     </a>
                   </li>
@@ -426,11 +462,11 @@ export default function LandingPageNew() {
             </div>
             
             <div>
-              <h3 className="font-bold mb-4">Legal</h3>
+              <h3 className="font-bold mb-4 text-white">Legal</h3>
               <ul className="space-y-3">
                 {['Privacy', 'Terms', 'Security', 'Cookies'].map((item) => (
                   <li key={item}>
-                    <a href="#" className="text-white/60 hover:text-white transition">
+                    <a href="#" className="text-white/60 hover:text-white transition-colors duration-200">
                       {item}
                     </a>
                   </li>
