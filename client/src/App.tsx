@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -31,25 +31,6 @@ import { useToast } from "@/hooks/use-toast";
 import LandingPage from "@/pages/landing-page";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SplashScreen } from "@/components/splash/SplashScreen";
-import { useState } from "react";
-
-// Correct implementation for project detail route
-export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
-
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
-
-  return (
-    <Router>
-      <Switch>
-        <Route path="/" component={LandingPage} />
-        {/* Other routes... */}
-      </Switch>
-    </Router>
-  );
-}
 
 const SafeProjectDetail = () => {
   // No need to call ProjectDetail as a function, it's already a React component
